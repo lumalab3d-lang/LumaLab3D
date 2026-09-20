@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LUMA LAB 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#ECEFF3; --surface:#FFFFFF; --surface-2:#F4F6F8; --ink:#141D28; --muted:#586574; --line:#D3D9E0;
+  --accent:#2740D9; --accent-ink:#FFFFFF; --danger:#B3261E;
+  --c-material:#2740D9; --c-energy:#0E9BB5; --c-machine:#7A5AF0; --c-failure:#E07A2E; --c-labor:#2C9A67;
+  --c-design:#CC3F8B; --c-extras:#8592A0; --c-profit:#E9A912; --c-fee:#A94A38; --c-tax:#4A5563;
+  --brand-accent:#8332E0; --brand-accent-2:#B366E8;
+  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141A; --surface:#18202A; --surface-2:#1F2934; --ink:#E9EEF3; --muted:#9AA7B4; --line:#2B3541;
+    --accent:#8E9BFF; --accent-ink:#0F141A; --danger:#FF8A80;
+    --c-material:#6F84FF; --c-energy:#3CC4DB; --c-machine:#A48CFF; --c-failure:#F19A55; --c-labor:#52C48D;
+    --c-design:#EE72AE; --c-extras:#93A0AE; --c-profit:#F3BE3A; --c-fee:#D9765F; --c-tax:#8D99A7;
+    --brand-accent:#B48CFF; --brand-accent-2:#E2A6FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#18202A; --surface-2:#1F2934; --ink:#E9EEF3; --muted:#9AA7B4; --line:#2B3541;
+  --accent:#8E9BFF; --accent-ink:#0F141A; --danger:#FF8A80;
+  --c-material:#6F84FF; --c-energy:#3CC4DB; --c-machine:#A48CFF; --c-failure:#F19A55; --c-labor:#52C48D;
+  --c-design:#EE72AE; --c-extras:#93A0AE; --c-profit:#F3BE3A; --c-fee:#D9765F; --c-tax:#8D99A7;
+  --brand-accent:#B48CFF; --brand-accent-2:#E2A6FF;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+.app{max-width:1180px;margin:0 auto;padding:24px 20px 104px}
+.top{display:flex;flex-wrap:wrap;gap:16px 24px;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+.brand{display:flex;gap:14px;align-items:center}
+.brand-logo{width:54px;height:54px;border-radius:14px;flex:none;object-fit:cover;box-shadow:0 3px 10px -2px rgba(20,29,40,.4)}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(24px,5vw,34px);line-height:1;letter-spacing:-0.02em;margin:0 0 6px}
+h1 .b3d{background:linear-gradient(90deg,var(--brand-accent),var(--brand-accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.top p{margin:0;color:var(--muted);max-width:52ch;font-size:14.5px}
+.top-actions{display:flex;gap:10px;align-items:flex-end}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;margin-bottom:26px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font:inherit;font-weight:600;font-size:14px;white-space:nowrap;border:0;background:transparent;color:var(--muted);padding:10px 14px;border-radius:9px;cursor:pointer;flex:none}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 1px var(--line)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.view[hidden]{display:none}
+
+.grid{display:grid;gap:8px 40px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr) minmax(340px,410px);align-items:start}
+}
+
+/* Secciones de datos (calculadora) */
+.sec{margin:0 0 36px}
+.sec h2{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.01em;margin:0 0 16px;display:flex;align-items:center;gap:11px}
+.sec h2::before{content:"";width:9px;height:22px;border-radius:3px;background:repeating-linear-gradient(0deg,var(--sc,var(--muted)) 0 3px,transparent 3px 5px);flex:none}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px}
+.full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lbl,.field>label{font-size:14px;font-weight:600;color:var(--ink)}
+.hint{font-size:13px;line-height:1.4;color:var(--muted);margin:0}
+.inp{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:border-color .15s,box-shadow .15s}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.inp input,.inp select{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:11px 12px;outline:0;font-variant-numeric:tabular-nums}
+.inp select{cursor:pointer}
+.inp select option{background:var(--surface);color:var(--ink)}
+.inp select:disabled,.inp input:disabled{opacity:.55;cursor:not-allowed}
+.unit{padding-right:12px;color:var(--muted);font-size:14px;white-space:nowrap}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+.seg label{position:relative;display:block}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;padding:10px 8px;border-radius:9px;font-weight:600;font-size:15px;color:var(--muted);transition:background .15s,color .15s}
+.seg input:checked + span{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 1px var(--line)}
+.seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:1px}
+
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:10px;padding:11px 18px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:600}
+.btn.ghost:hover{background:var(--surface-2);filter:none}
+.btn.small{padding:8px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.inp input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cur-field{width:96px}
+
+/* Panel de resultado calculadora */
+.result{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 10px 30px -18px rgba(20,29,40,.35)}
+@media (min-width:900px){
+  .result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100dvh - 32px);max-height:calc(100vh - 32px);overflow-y:auto}
+}
+.r-label{margin:0;font-weight:600;color:var(--muted);font-size:15px}
+.price{font-family:var(--font-display);font-weight:800;font-size:clamp(42px,8vw,58px);line-height:1.02;letter-spacing:-0.03em;margin:2px 0 0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.r-sub{margin:6px 0 0;color:var(--muted);font-size:15px}
+.bar{display:flex;height:46px;border-radius:10px;overflow:hidden;background:var(--surface-2);margin:22px 0 16px}
+.bar i{display:block;height:100%;flex:0 0 0%;position:relative;transition:flex-basis .28s ease}
+.bar i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.34) 0 1px,transparent 1px 4px)}
+.rows{list-style:none;margin:0 0 18px;padding:0}
+.rows li{display:grid;grid-template-columns:12px minmax(0,1fr) auto 52px;gap:10px;align-items:center;padding:7px 0;font-size:15px}
+.rows .sw{width:12px;height:12px;border-radius:3px}
+.rows .ra{font-variant-numeric:tabular-nums;font-weight:600}
+.rows .rp{text-align:right;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.rows .neg{color:var(--danger)}
+.metrics{margin:0 0 18px;padding:16px 0 0;border-top:1px solid var(--line);display:grid;gap:10px}
+.metrics div{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
+.metrics dt{color:var(--muted);font-size:14.5px}
+.metrics dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.warn{margin:0 0 16px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);font-size:14px;font-weight:600}
+.result .btn{width:100%}
+.note{margin:14px 0 0;font-size:12.5px;color:var(--muted);line-height:1.4}
+.save-box{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.save-box h3{margin:0 0 12px;font-family:var(--font-display);font-size:16px;font-weight:700}
+.save-box .fields{gap:12px 10px}
+.save-box .btn{margin-top:6px}
+.ok-msg{color:var(--c-labor);font-weight:700;font-size:13.5px;margin:8px 0 0}
+
+/* Barra móvil */
+.mbar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px -16px rgba(20,29,40,.45);transition:transform .2s ease}
+.mbar.off{transform:translateY(110%)}
+.mbar small{display:block;color:var(--muted);font-size:13px;line-height:1.2}
+.mbar strong{font-family:var(--font-display);font-size:28px;line-height:1.1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+@media (min-width:900px){.mbar{display:none}}
+
+/* Paneles genéricos de otras pestañas */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:20px}
+.panel h2{font-family:var(--font-display);font-weight:700;font-size:19px;margin:0 0 4px;letter-spacing:-.01em}
+.panel .sub{margin:0 0 16px;color:var(--muted);font-size:14px}
+
+details.addbox{border:1px dashed var(--line);border-radius:14px;padding:14px 16px;margin-bottom:18px}
+details.addbox[open]{border-style:solid;background:var(--surface-2)}
+details.addbox summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none;display:flex;align-items:center;gap:10px}
+details.addbox summary::-webkit-details-marker{display:none}
+details.addbox summary::before{content:"+";display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-weight:800;flex:none;font-size:15px;line-height:1}
+details.addbox[open] summary::before{content:"–"}
+details.addbox .fields{margin-top:14px}
+details.addbox .form-actions{display:flex;gap:10px;margin-top:4px;grid-column:1/-1}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card h3{margin:0;font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
+.card .muted{color:var(--muted);font-size:13px}
+.card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;width:fit-content;white-space:nowrap}
+.badge.ok{background:color-mix(in srgb,var(--c-labor) 16%,transparent);color:var(--c-labor)}
+.badge.warn{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.badge.muted{background:var(--surface-2);color:var(--muted)}
+.progress{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.progress i{display:block;height:100%;background:var(--c-labor);border-radius:99px 0 0 99px;transition:width .3s}
+.rowline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.rowline b{font-variant-numeric:tabular-nums;font-weight:700}
+.card-actions{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+.card-actions .btn{flex:1;padding:8px 10px;font-size:13px}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:17px;font-weight:700;cursor:pointer;flex:none}
+.stepper span{min-width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+
+.qr-row{display:flex;gap:12px;align-items:center}
+.qr-thumb{width:72px;height:72px;background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;padding:4px}
+.qr-thumb img{max-width:100%;max-height:100%}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.stat .k{color:var(--muted);font-size:13px;font-weight:600}
+.stat .v{font-family:var(--font-display);font-weight:800;font-size:26px;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere}
+.stat .v small{font-size:13px;font-weight:600;color:var(--muted)}
+
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+table.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;padding:0 10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.tbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.tbl tr:last-child td{border-bottom:0}
+.empty{color:var(--muted);font-size:14px;padding:22px 4px;text-align:center}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 9px;font-size:13px;cursor:pointer;font-weight:600}
+.icon-btn:hover{color:var(--danger);border-color:var(--danger)}
+.inline-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:18px}
+.inline-form .field{min-width:150px;flex:1}
+.roadmap{border:1px dashed var(--line);border-radius:14px;padding:16px 18px;margin-top:6px}
+.roadmap h3{margin:0 0 8px;font-family:var(--font-display);font-size:15px}
+.roadmap ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.6}
+
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea, #printArea *{visibility:visible}
+  #printArea{display:flex!important;position:fixed;inset:0;padding:12mm;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;background:#fff}
+  .plabel-brand{font-family:var(--font-display,sans-serif);font-weight:800;font-size:12px;letter-spacing:.04em;color:#7A3FD1;text-transform:uppercase;margin-bottom:4px}
+  .plabel-name{font-family:var(--font-display,sans-serif);font-weight:800;font-size:18px;color:#000}
+  .plabel-price{font-family:var(--font-display,sans-serif);font-weight:800;font-size:28px;color:#000}
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <img class="brand-logo" src="data:image/jpeg;base64,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" alt="Logo de LUMA LAB 3D">
+      <div>
+        <h1>LUMA LAB <span class="b3d">3D</span></h1>
+        <p>Calculadora, impresoras, insumos, productos y ventas. Todo se guarda en este dispositivo.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="field cur-field">
+        <label for="currency">Moneda</label>
+        <div class="inp"><input id="currency" type="text" maxlength="4" autocomplete="off" aria-label="Símbolo de moneda"></div>
+      </div>
+      <button class="btn ghost" id="reset" type="button">Restablecer calculadora</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" data-view="calc" type="button">Calculadora</button>
+    <button class="tab" role="tab" data-view="productos" type="button">Productos</button>
+    <button class="tab" role="tab" data-view="impresoras" type="button">Impresoras</button>
+    <button class="tab" role="tab" data-view="insumos" type="button">Insumos</button>
+    <button class="tab" role="tab" data-view="ventas" type="button">Ventas</button>
+    <button class="tab" role="tab" data-view="resumen" type="button">Resumen</button>
+  </nav>
+
+  <!-- ================= CALCULADORA ================= -->
+  <section class="view" id="view-calc">
+    <div class="grid">
+      <div class="inputs">
+
+        <section class="sec" style="--sc:var(--muted)">
+          <h2>La pieza</h2>
+          <div class="fields">
+            <div class="field full">
+              <label for="name">Nombre de la pieza</label>
+              <div class="inp"><input id="name" type="text" autocomplete="off" placeholder="Ej. Soporte de audífonos"></div>
+            </div>
+            <div class="field">
+              <label for="qty">Cantidad de piezas</label>
+              <div class="inp"><input id="qty" type="number" inputmode="numeric" min="1" step="1"><span class="unit">u</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-material)">
+          <h2>Material</h2>
+          <div class="fields">
+            <div class="field">
+              <label for="material">Tipo de filamento</label>
+              <div class="inp">
+                <select id="material">
+                  <option value="PLA">PLA</option>
+                  <option value="PETG">PETG</option>
+                  <option value="ABS">ABS</option>
+                  <option value="ASA">ASA</option>
+                  <option value="TPU">TPU (flexible)</option>
+                  <option value="Nylon">Nylon</option>
+                  <option value="Resina">Resina</option>
+                  <option value="custom">Otro</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="pricePerKg">Precio por kg</label>
+              <div class="inp"><input id="pricePerKg" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/kg</span></div>
+            </div>
+            <div class="field">
+              <label for="weight">Peso de la pieza</label>
+              <div class="inp"><input id="weight" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
+            </div>
+            <div class="field">
+              <label for="support">Soportes y purga</label>
+              <div class="inp"><input id="support" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
+            </div>
+            <div class="field full">
+              <label for="supplyLink">Insumo vinculado (para descontar stock al vender)</label>
+              <div class="inp"><select id="supplyLink"><option value="">— Sin vincular —</option></select></div>
+            </div>
+            <p class="hint full">El peso lo muestra tu laminador (Cura, Bambu Studio, PrusaSlicer). Si vinculas un insumo, cada venta descuenta el peso usado del inventario de filamento.</p>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-machine)">
+          <h2>Impresión y máquina</h2>
+          <div class="fields">
+            <div class="field full">
+              <label for="usePrinter">Impresora (perfil)</label>
+              <div class="inp"><select id="usePrinter"><option value="">Personalizada — ingresar abajo</option></select></div>
+              <p class="hint">Elige una impresora guardada para usar su precio y vida útil real. Cada pieza vendida abona a pagar esa máquina.</p>
+            </div>
+            <div class="field full">
+              <span class="lbl">Tiempo de impresión</span>
+              <div class="pair">
+                <div class="inp"><input id="hours" type="number" inputmode="numeric" min="0" step="1" aria-label="Horas"><span class="unit">h</span></div>
+                <div class="inp"><input id="minutes" type="number" inputmode="numeric" min="0" step="1" aria-label="Minutos"><span class="unit">min</span></div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="watts">Consumo de la impresora</label>
+              <div class="inp"><input id="watts" type="number" inputmode="decimal" min="0" step="any"><span class="unit">W</span></div>
+            </div>
+            <div class="field">
+              <label for="kwh">Costo de la luz</label>
+              <div class="inp"><input id="kwh" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/kWh</span></div>
+            </div>
+            <div class="field">
+              <label for="printerPrice">Precio de la impresora</label>
+              <div class="inp"><input id="printerPrice" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+            </div>
+            <div class="field">
+              <label for="lifeHours">Vida útil estimada</label>
+              <div class="inp"><input id="lifeHours" type="number" inputmode="decimal" min="1" step="any"><span class="unit">h</span></div>
+            </div>
+            <div class="field">
+              <label for="maint">Mantenimiento</label>
+              <div class="inp"><input id="maint" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/h</span></div>
+            </div>
+            <div class="field">
+              <label for="fail">Reserva por fallos</label>
+              <div class="inp"><input id="fail" type="number" inputmode="decimal" min="0" step="any"><span class="unit">%</span></div>
+            </div>
+            <p class="hint full">Consumo real promedio: entre 100 y 200 W es normal con cama caliente. La vida útil reparte el precio de la máquina entre sus horas de trabajo. La reserva por fallos suma un porcentaje para cubrir impresiones que salen mal.</p>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-design)">
+          <h2>Diseño</h2>
+          <div class="fields">
+            <div class="field full">
+              <span class="lbl" id="designLbl">¿Hiciste el diseño tú?</span>
+              <div class="seg" role="radiogroup" aria-labelledby="designLbl">
+                <label><input type="radio" name="designMode" value="existing"><span>No, modelo existente</span></label>
+                <label><input type="radio" name="designMode" value="own"><span>Sí, diseño propio</span></label>
+              </div>
+            </div>
+            <div class="field" data-mode="own">
+              <label for="designHours">Horas de diseño</label>
+              <div class="inp"><input id="designHours" type="number" inputmode="decimal" min="0" step="any"><span class="unit">h</span></div>
+            </div>
+            <div class="field" data-mode="own">
+              <label for="designRate">Tarifa de diseño</label>
+              <div class="inp"><input id="designRate" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/h</span></div>
+            </div>
+            <div class="field full" data-mode="existing">
+              <label for="license">Licencia o compra del modelo</label>
+              <div class="inp"><input id="license" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+              <p class="hint">Déjalo en 0 si el modelo es gratuito o ya es tuyo.</p>
+            </div>
+            <div class="field full" id="splitField">
+              <label for="split">Repartir el costo entre</label>
+              <div class="inp"><input id="split" type="number" inputmode="numeric" min="1" step="1"><span class="unit">piezas</span></div>
+              <p class="hint">Vacío: se reparte entre las piezas de este pedido. Si vas a vender esta pieza muchas veces, escribe cuántas ventas esperas para recuperar el diseño poco a poco.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-labor)">
+          <h2>Mano de obra</h2>
+          <div class="fields">
+            <div class="field">
+              <label for="prep">Preparación del pedido</label>
+              <div class="inp"><input id="prep" type="number" inputmode="decimal" min="0" step="any"><span class="unit">min</span></div>
+            </div>
+            <div class="field">
+              <label for="post">Acabado por pieza</label>
+              <div class="inp"><input id="post" type="number" inputmode="decimal" min="0" step="any"><span class="unit">min</span></div>
+            </div>
+            <div class="field full">
+              <label for="rate">Tu tarifa por hora</label>
+              <div class="inp"><input id="rate" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/h</span></div>
+            </div>
+            <p class="hint full">La preparación (laminar, calibrar, cargar filamento) se hace una vez por pedido y se reparte entre las piezas. El acabado (quitar soportes, lijar, pintar, ensamblar) se cuenta por cada pieza.</p>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-extras)">
+          <h2>Extras</h2>
+          <div class="fields">
+            <div class="field">
+              <label for="supplies">Insumos por pieza</label>
+              <div class="inp"><input id="supplies" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+            </div>
+            <div class="field">
+              <label for="packaging">Empaque por pieza</label>
+              <div class="inp"><input id="packaging" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+            </div>
+            <div class="field full">
+              <label for="shipping">Envío por pedido</label>
+              <div class="inp"><input id="shipping" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+              <p class="hint">Solo si lo incluyes en el precio. Insumos son pintura, tornillos, imanes, llaveros y similares.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" style="--sc:var(--c-profit)">
+          <h2>Precio de venta</h2>
+          <div class="fields">
+            <div class="field">
+              <label for="markup">Ganancia sobre el costo</label>
+              <div class="inp"><input id="markup" type="number" inputmode="decimal" min="0" step="any"><span class="unit">%</span></div>
+            </div>
+            <div class="field">
+              <label for="fee">Comisión de venta</label>
+              <div class="inp"><input id="fee" type="number" inputmode="decimal" min="0" max="90" step="any"><span class="unit">%</span></div>
+            </div>
+            <div class="field">
+              <label for="tax">Impuesto</label>
+              <div class="inp"><input id="tax" type="number" inputmode="decimal" min="0" step="any"><span class="unit">%</span></div>
+            </div>
+            <div class="field">
+              <label for="rounding">Redondeo del precio</label>
+              <div class="inp">
+                <select id="rounding">
+                  <option value="none">Sin redondeo</option>
+                  <option value="half">Subir a x.50</option>
+                  <option value="one">Subir al entero</option>
+                  <option value="x99">Terminar en .99</option>
+                </select>
+              </div>
+            </div>
+            <p class="hint full">Una ganancia de 100 % significa cobrar el doble del costo. La comisión es la de tu tienda en línea o método de pago y se descuenta de lo que cobras. El impuesto (ITBMS, IVA u otro) se suma encima del precio y no es ganancia tuya.</p>
+          </div>
+        </section>
+      </div>
+
+      <aside id="resultado" class="result" aria-label="Resultado del cálculo">
+        <p class="r-label">Precio por pieza</p>
+        <p class="price" id="price" aria-live="polite">0.00</p>
+        <p class="r-sub" id="sub" hidden></p>
+
+        <div class="bar" id="bar" role="img" aria-label="Desglose del precio"></div>
+        <ul class="rows" id="rows"></ul>
+
+        <dl class="metrics">
+          <div><dt>Costo de producción por pieza</dt><dd id="mCost">0.00</dd></div>
+          <div><dt>Ganancia neta por pieza</dt><dd id="mProfit">0.00</dd></div>
+          <div id="mExTaxRow" hidden><dt>Precio sin impuesto</dt><dd id="mExTax">0.00</dd></div>
+          <div><dt>Ganancia neta por hora de impresión</dt><dd id="mHour">—</dd></div>
+        </dl>
+
+        <p class="warn" id="warn" hidden>Con estos datos vendes por debajo del costo. Sube la ganancia o revisa tiempos y materiales.</p>
+        <button class="btn" id="copy" type="button">Copiar resumen</button>
+        <p class="note">El costo de producción es tu precio mínimo: por debajo de eso pierdes dinero.</p>
+
+        <div class="save-box">
+          <h3>Guardar como producto en stock</h3>
+          <div class="fields">
+            <div class="field full">
+              <label for="saveStock">Cantidad inicial en stock</label>
+              <div class="inp"><input id="saveStock" type="number" inputmode="numeric" min="0" step="1" value="1"><span class="unit">u</span></div>
+            </div>
+          </div>
+          <button class="btn" id="saveProduct" type="button">Guardar producto</button>
+          <p class="ok-msg" id="saveMsg" hidden></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= PRODUCTOS ================= -->
+  <section class="view" id="view-productos" hidden>
+    <div class="panel">
+      <h2>Productos en stock</h2>
+      <p class="sub">Piezas listas para vender, calculadas en la pestaña Calculadora y guardadas aquí con su costo, precio y código QR.</p>
+      <div id="productosCards" class="cards"></div>
+      <p class="empty" id="productosEmpty" hidden>Aún no tienes productos guardados. Ve a la Calculadora, arma el precio de una pieza y usa «Guardar producto».</p>
+    </div>
+  </section>
+
+  <!-- ================= IMPRESORAS ================= -->
+  <section class="view" id="view-impresoras" hidden>
+    <div class="panel">
+      <h2>Impresoras</h2>
+      <p class="sub">Registra el precio de cada impresora. Cuando vendes un producto asignado a ella, un porcentaje de la ganancia se va abonando hasta cubrir su costo.</p>
+
+      <div class="fields" style="margin-bottom:18px;max-width:320px">
+        <div class="field">
+          <label for="recoveryPercent">% de la ganancia que se abona a la impresora en cada venta</label>
+          <div class="inp"><input id="recoveryPercent" type="number" inputmode="decimal" min="0" max="100" step="any"><span class="unit">%</span></div>
+        </div>
+      </div>
+
+      <details class="addbox" id="printerBox">
+        <summary>Agregar impresora</summary>
+        <div class="fields">
+          <div class="field full">
+            <label for="pName">Nombre</label>
+            <div class="inp"><input id="pName" type="text" placeholder="Ej. Ender 3 V2"></div>
+          </div>
+          <div class="field">
+            <label for="pCost">Costo de la impresora</label>
+            <div class="inp"><input id="pCost" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+          </div>
+          <div class="field">
+            <label for="pLife">Vida útil estimada</label>
+            <div class="inp"><input id="pLife" type="number" inputmode="decimal" min="1" step="any" value="4000"><span class="unit">h</span></div>
+          </div>
+          <div class="field">
+            <label for="pRecovered">Ya recuperado (opcional)</label>
+            <div class="inp"><input id="pRecovered" type="number" inputmode="decimal" min="0" step="any" value="0"><span class="unit"><b class="c" style="font-weight:inherit"></b></span></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" id="printerSave" type="button">Agregar impresora</button>
+            <button class="btn ghost" id="printerCancel" type="button">Cancelar</button>
+          </div>
+        </div>
+      </details>
+
+      <div id="printerCards" class="cards"></div>
+      <p class="empty" id="printerEmpty" hidden>Aún no registras impresoras.</p>
+    </div>
+  </section>
+
+  <!-- ================= INSUMOS ================= -->
+  <section class="view" id="view-insumos" hidden>
+    <div class="panel">
+      <h2>Insumos (filamento y más)</h2>
+      <p class="sub">Controla cuánto material tienes disponible. Al vincular un insumo a un producto, cada venta descuenta el peso usado automáticamente.</p>
+
+      <details class="addbox" id="supplyBox">
+        <summary>Agregar insumo</summary>
+        <div class="fields">
+          <div class="field full">
+            <label for="sName">Nombre</label>
+            <div class="inp"><input id="sName" type="text" placeholder="Ej. PLA negro 1kg"></div>
+          </div>
+          <div class="field">
+            <label for="sStock">Stock actual</label>
+            <div class="inp"><input id="sStock" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
+          </div>
+          <div class="field">
+            <label for="sCost">Precio por kg</label>
+            <div class="inp"><input id="sCost" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/kg</span></div>
+          </div>
+          <div class="field">
+            <label for="sMin">Aviso de stock bajo</label>
+            <div class="inp"><input id="sMin" type="number" inputmode="decimal" min="0" step="any" value="200"><span class="unit">g</span></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" id="supplySave" type="button">Agregar insumo</button>
+            <button class="btn ghost" id="supplyCancel" type="button">Cancelar</button>
+          </div>
+        </div>
+      </details>
+
+      <div id="supplyCards" class="cards"></div>
+      <p class="empty" id="supplyEmpty" hidden>Aún no registras insumos.</p>
+    </div>
+  </section>
+
+  <!-- ================= VENTAS ================= -->
+  <section class="view" id="view-ventas" hidden>
+    <div class="panel">
+      <h2>Registrar venta</h2>
+      <p class="sub">Descuenta stock del producto y del insumo vinculado, y abona a la impresora asignada.</p>
+      <div class="inline-form">
+        <div class="field">
+          <label for="saleProduct">Producto</label>
+          <div class="inp"><select id="saleProduct"></select></div>
+        </div>
+        <div class="field" style="max-width:120px">
+          <label for="saleQty">Cantidad</label>
+          <div class="inp"><input id="saleQty" type="number" min="1" step="1" value="1"></div>
+        </div>
+        <div class="field" style="max-width:170px">
+          <label for="saleDate">Fecha</label>
+          <div class="inp"><input id="saleDate" type="date"></div>
+        </div>
+        <button class="btn" id="saleSave" type="button">Registrar venta</button>
+      </div>
+      <p class="empty" id="saleFormEmpty" hidden>Primero guarda un producto en la pestaña Productos.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Historial de ventas</h2>
+      <div class="tbl-wrap">
+        <table class="tbl" id="salesTable">
+          <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Precio u.</th><th>Total</th><th>Impresora</th><th>Abono</th><th></th></tr></thead>
+          <tbody id="salesBody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="salesEmpty" hidden>Aún no hay ventas registradas.</p>
+    </div>
+  </section>
+
+  <!-- ================= RESUMEN ================= -->
+  <section class="view" id="view-resumen" hidden>
+    <div class="panel" id="backupPanel">
+      <h2>Copia de seguridad</h2>
+      <p class="sub">Guarda de vez en cuando un archivo con todos tus datos (impresoras, insumos, productos y ventas). Si algo llegara a borrarse del navegador, lo restauras desde ese archivo.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <button class="btn" id="backupDownload" type="button">Descargar copia de seguridad</button>
+        <button class="btn ghost" id="backupCopy" type="button">Copiar datos como texto</button>
+        <label class="btn ghost" for="backupFile" style="cursor:pointer">Restaurar desde archivo
+          <input id="backupFile" type="file" accept="application/json,.json" style="display:none">
+        </label>
+      </div>
+      <p class="ok-msg" id="backupMsg" hidden></p>
+      <p class="hint" style="margin-top:10px">En el iPad, «Descargar copia de seguridad» te deja guardar el archivo en la app Archivos — así tienes un respaldo fuera del navegador.</p>
+    </div>
+
+    <div class="stats" id="resumenStats"></div>
+
+    <div class="panel" id="lowStockPanel" hidden>
+      <h2>Insumos con stock bajo</h2>
+      <div id="lowStockList" class="cards"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Camino hacia web multi-dispositivo</h2>
+      <p class="sub">Hoy todo vive en la memoria de este navegador. Así se vería crecer la app cuando quieran compartirla entre varios dispositivos o publicar el stock.</p>
+      <div class="roadmap">
+        <h3>Fase actual</h3>
+        <ul><li>App de una sola página, sin cuenta ni internet necesario. Funciona en el iPad agregándola a la pantalla de inicio desde Safari (ícono compartir → «Agregar a pantalla de inicio»).</li></ul>
+      </div>
+      <div class="roadmap" style="margin-top:12px">
+        <h3>Fase 2 — Base de datos</h3>
+        <ul>
+          <li>Se conecta a una base de datos (por ejemplo Supabase o Firebase) para que impresoras, insumos, productos y ventas se guarden en la nube.</li>
+          <li>Ahí sí conviene desplegar en Vercel: aloja el sitio gratis y lo conecta con la base de datos.</li>
+        </ul>
+      </div>
+      <div class="roadmap" style="margin-top:12px">
+        <h3>Fase 3 — Multi-dispositivo y tienda pública</h3>
+        <ul>
+          <li>Con cuenta de usuario, el mismo inventario se ve igual en el iPad, el teléfono y la computadora.</li>
+          <li>Una página pública lista el stock disponible con fotos y precios para que la gente vea qué hay para comprar.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="mbar" id="mbar">
+  <div><small>Precio por pieza</small><strong id="mPrice">0.00</strong></div>
+  <button class="btn" id="goResult" type="button">Ver desglose</button>
+</div>
+
+<div id="printArea">
+  <div class="plabel-brand">LUMA LAB 3D</div>
+  <div class="plabel-name" id="plabelName"></div>
+  <div class="plabel-price" id="plabelPrice"></div>
+  <div id="plabelQr"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var KEY = 'taller3d-datos-v1';
+var OLD_KEY = 'calc3d-precios-v1';
+
+function uid(){ return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* Confirmación de dos toques (los diálogos nativos confirm() quedan bloqueados
+   dentro del artefacto, así que usamos el propio botón como confirmación). */
+function confirmDelete(btn, doIt){
+  if(btn.dataset.confirming === '1'){
+    clearTimeout(btn._confirmTimer);
+    doIt();
+    return;
+  }
+  btn.dataset.confirming = '1';
+  var original = btn.dataset.label || btn.textContent;
+  btn.dataset.label = original;
+  btn.textContent = '¿Seguro? Toca de nuevo';
+  btn._confirmTimer = setTimeout(function(){
+    btn.dataset.confirming = '0';
+    btn.textContent = original;
+  }, 3000);
+}
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+var CALC_DEFAULTS = {
+  name:'', qty:1,
+  material:'PLA', pricePerKg:20, weight:50, support:5, supplyLink:'',
+  usePrinter:'', hours:3, minutes:30, watts:120, kwh:0.20, printerPrice:300, lifeHours:4000, maint:0.05, fail:5,
+  designMode:'existing', designHours:2, designRate:8, license:0, split:'',
+  prep:10, post:10, rate:5,
+  supplies:0, packaging:0.5, shipping:0,
+  markup:100, fee:0, tax:0, rounding:'none'
+};
+var PRESETS = { PLA:20, PETG:22, ABS:24, ASA:28, TPU:30, Nylon:45, Resina:35 };
+var CALC_IDS = Object.keys(CALC_DEFAULTS).filter(function(k){ return k !== 'designMode'; });
+
+var COMP = [
+  {k:'material', l:'Material'},
+  {k:'energy',   l:'Electricidad'},
+  {k:'machine',  l:'Desgaste de la impresora'},
+  {k:'failure',  l:'Reserva por fallos'},
+  {k:'labor',    l:'Mano de obra'},
+  {k:'design',   l:'Diseño'},
+  {k:'extras',   l:'Insumos, empaque y envío'},
+  {k:'profit',   l:'Tu ganancia'},
+  {k:'fee',      l:'Comisión de venta'},
+  {k:'tax',      l:'Impuesto'}
+];
+
+/* ---------- Estado global ---------- */
+var DB_DEFAULTS = { currency:'$', recoveryPercent:15, printers:[], supplies:[], products:[], sales:[] };
+
+function loadDb(){
+  var db = Object.assign({}, DB_DEFAULTS);
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      db = Object.assign(db, parsed);
+    } else {
+      var oldRaw = localStorage.getItem(OLD_KEY);
+      if(oldRaw){
+        var old = JSON.parse(oldRaw);
+        if(old.currency) db.currency = old.currency;
+      }
+    }
+  }catch(e){}
+  if(!Array.isArray(db.printers)) db.printers = [];
+  if(!Array.isArray(db.supplies)) db.supplies = [];
+  if(!Array.isArray(db.products)) db.products = [];
+  if(!Array.isArray(db.sales)) db.sales = [];
+  return db;
+}
+function saveDb(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+
+function loadCalc(){
+  var s = Object.assign({}, CALC_DEFAULTS);
+  try{
+    var raw = localStorage.getItem(OLD_KEY);
+    if(raw){ s = Object.assign(s, JSON.parse(raw)); }
+  }catch(e){}
+  return s;
+}
+function saveCalc(){ try{ localStorage.setItem(OLD_KEY, JSON.stringify(calc)); }catch(e){} }
+
+var db = loadDb();
+var calc = loadCalc();
+var cur = '$';
+
+/* ---------- Cálculo (compartido calculadora + productos) ---------- */
+function n(v){ var x = parseFloat(v); return (isFinite(x) && x > 0) ? x : 0; }
+
+function roundPrice(x, mode){
+  if(x <= 0) return x;
+  var up = function(v, step){ return Math.ceil(v/step - 1e-9) * step; };
+  if(mode === 'half') return up(x, 0.5);
+  if(mode === 'one')  return up(x, 1);
+  if(mode === 'x99'){ var p = Math.floor(x) + 0.99; if(p < x - 1e-9) p += 1; return p; }
+  return x;
+}
+
+function compute(s){
+  var q = Math.max(1, Math.floor(n(s.qty)) || 1);
+  var grams = n(s.weight) + n(s.support);
+  var hrs = n(s.hours) + n(s.minutes)/60;
+
+  var material = grams/1000 * n(s.pricePerKg);
+  var energy   = n(s.watts)/1000 * hrs * n(s.kwh);
+  var lifeH    = Math.max(1, n(s.lifeHours));
+  var machine  = hrs * (n(s.printerPrice)/lifeH + n(s.maint));
+  var failure  = (material + energy + machine) * n(s.fail)/100;
+
+  var rate  = n(s.rate);
+  var labor = (n(s.post)/60 * rate) + (n(s.prep)/60 * rate)/q;
+
+  var splitN = Math.max(1, Math.floor(n(s.split)) || q);
+  var designTotal = (s.designMode === 'own') ? n(s.designHours) * n(s.designRate) : n(s.license);
+  var design = designTotal / splitN;
+
+  var extras = n(s.supplies) + n(s.packaging) + n(s.shipping)/q;
+
+  var cost = material + energy + machine + failure + labor + design + extras;
+
+  var feeR = Math.min(n(s.fee), 90)/100;
+  var taxR = n(s.tax)/100;
+  var base = cost * (1 + n(s.markup)/100);
+
+  var exTax = base / (1 - feeR);
+  var final = roundPrice(exTax * (1 + taxR), s.rounding);
+  exTax = final / (1 + taxR);
+
+  var feeAmt = exTax * feeR;
+  var taxAmt = final - exTax;
+  var profit = exTax - feeAmt - cost;
+
+  return {
+    q:q, hrs:hrs, designTotal:designTotal, grams:grams,
+    parts:{material:material, energy:energy, machine:machine, failure:failure, labor:labor, design:design, extras:extras, profit:profit, fee:feeAmt, tax:taxAmt},
+    cost:cost, exTax:exTax, final:final, profit:profit,
+    margin: exTax > 0 ? profit/exTax*100 : 0,
+    perHour: hrs > 0 ? profit/hrs : null
+  };
+}
+
+/* ---------- Formato ---------- */
+function num(v){ return Math.abs(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function money(v){ return (v < -0.004 ? '−' : '') + cur + num(v); }
+function pct(v){ return (Math.round(v*10)/10).toString() + ' %'; }
+function grams(v){ return v >= 1000 ? (v/1000).toLocaleString('en-US',{maximumFractionDigits:2}) + ' kg' : Math.round(v) + ' g'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ==================================================================== */
+/* TABS                                                                  */
+/* ==================================================================== */
+var VIEWS = ['calc','productos','impresoras','insumos','ventas','resumen'];
+var tabBtns = document.querySelectorAll('.tab');
+function showView(v){
+  VIEWS.forEach(function(id){ $('view-'+id).hidden = (id !== v); });
+  tabBtns.forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-view') === v ? 'true' : 'false'); });
+  if(v === 'productos') renderProductos();
+  if(v === 'impresoras') renderPrinters();
+  if(v === 'insumos') renderSupplies();
+  if(v === 'ventas') renderVentas();
+  if(v === 'resumen') renderResumen();
+  window.scrollTo(0,0);
+}
+tabBtns.forEach(function(b){ b.addEventListener('click', function(){ showView(b.getAttribute('data-view')); }); });
+
+/* ==================================================================== */
+/* CALCULADORA                                                           */
+/* ==================================================================== */
+function applyToDom(){
+  CALC_IDS.forEach(function(id){ $(id).value = calc[id]; });
+  var radios = document.querySelectorAll('input[name="designMode"]');
+  for(var i=0;i<radios.length;i++){ radios[i].checked = (radios[i].value === calc.designMode); }
+}
+function readFromDom(){
+  CALC_IDS.forEach(function(id){ calc[id] = $(id).value; });
+  var checked = document.querySelector('input[name="designMode"]:checked');
+  calc.designMode = checked ? checked.value : 'existing';
+}
+
+var barEl = $('bar'), rowsEl = $('rows'), segs = {}, rowEls = {};
+COMP.forEach(function(c){
+  var seg = document.createElement('i');
+  seg.style.background = 'var(--c-' + c.k + ')';
+  barEl.appendChild(seg); segs[c.k] = seg;
+
+  var li = document.createElement('li');
+  li.innerHTML = '<span class="sw" style="background:var(--c-' + c.k + ')"></span><span class="rl"></span><span class="ra"></span><span class="rp"></span>';
+  li.querySelector('.rl').textContent = c.l;
+  rowsEl.appendChild(li);
+  rowEls[c.k] = { li:li, amt:li.querySelector('.ra'), pct:li.querySelector('.rp') };
+});
+
+var last = null;
+
+function refreshPrinterSelects(){
+  var opts = '<option value="">Personalizada — ingresar abajo</option>' + db.printers.map(function(p){
+    return '<option value="'+p.id+'">'+esc(p.name)+'</option>';
+  }).join('');
+  var sel = $('usePrinter');
+  var keep = sel.value;
+  sel.innerHTML = opts;
+  sel.value = db.printers.some(function(p){ return p.id === keep; }) ? keep : '';
+}
+function refreshSupplySelects(){
+  var opts = '<option value="">— Sin vincular —</option>' + db.supplies.map(function(s){
+    return '<option value="'+s.id+'">'+esc(s.name)+'</option>';
+  }).join('');
+  var sel = $('supplyLink');
+  var keep = sel.value;
+  sel.innerHTML = opts;
+  sel.value = db.supplies.some(function(s){ return s.id === keep; }) ? keep : '';
+}
+
+function syncPrinterFields(){
+  var pid = $('usePrinter').value;
+  var printerPriceEl = $('printerPrice'), lifeHoursEl = $('lifeHours');
+  if(pid){
+    var p = db.printers.filter(function(x){ return x.id === pid; })[0];
+    if(p){
+      printerPriceEl.value = p.cost;
+      lifeHoursEl.value = p.lifeHours;
+    }
+    printerPriceEl.disabled = true;
+    lifeHoursEl.disabled = true;
+  } else {
+    printerPriceEl.disabled = false;
+    lifeHoursEl.disabled = false;
+  }
+}
+
+function update(){
+  readFromDom();
+  cur = (db.currency || '').trim() || '$';
+  var els = document.querySelectorAll('.c');
+  for(var i=0;i<els.length;i++){ els[i].textContent = cur; }
+
+  var r = compute(calc);
+  last = r;
+
+  var own = calc.designMode === 'own';
+  document.querySelectorAll('[data-mode]').forEach(function(el){
+    el.hidden = (el.getAttribute('data-mode') === 'own') !== own;
+  });
+  $('splitField').hidden = !(r.designTotal > 0);
+  $('split').placeholder = String(r.q);
+
+  $('price').textContent = money(r.final);
+  $('mPrice').textContent = money(r.final);
+  var sub = $('sub');
+  if(r.q > 1){ sub.hidden = false; sub.textContent = 'Total de ' + r.q + ' piezas: ' + money(r.final * r.q); }
+  else { sub.hidden = true; }
+
+  var posSum = 0;
+  COMP.forEach(function(c){ posSum += Math.max(0, r.parts[c.k]); });
+  COMP.forEach(function(c){
+    var v = r.parts[c.k];
+    var always = (c.k === 'material' || c.k === 'energy' || c.k === 'machine' || c.k === 'profit');
+    var show = always || Math.abs(v) >= 0.005;
+    var row = rowEls[c.k];
+    row.li.hidden = !show;
+    row.amt.textContent = money(v);
+    row.amt.className = 'ra' + (v < -0.004 ? ' neg' : '');
+    row.pct.textContent = r.final > 0 ? pct(v / r.final * 100) : '—';
+    segs[c.k].style.flexBasis = posSum > 0 ? (Math.max(0, v) / posSum * 100) + '%' : '0%';
+  });
+  barEl.setAttribute('aria-label', 'Desglose del precio por pieza: ' + COMP.filter(function(c){ return r.parts[c.k] >= 0.005; }).map(function(c){ return c.l + ' ' + money(r.parts[c.k]); }).join(', '));
+
+  $('mCost').textContent = money(r.cost);
+  $('mProfit').textContent = money(r.profit) + (r.exTax > 0 ? ' (' + pct(r.margin) + ')' : '');
+  $('mExTaxRow').hidden = !(n(calc.tax) > 0);
+  $('mExTax').textContent = money(r.exTax);
+  $('mHour').textContent = r.perHour === null ? '—' : money(r.perHour) + '/h';
+  $('warn').hidden = !(r.profit < -0.004);
+
+  saveCalc();
+  saveDb();
+}
+
+function onInput(e){
+  var t = e.target;
+  if(t.id === 'material'){
+    if(t.value !== 'custom' && PRESETS[t.value] !== undefined){ $('pricePerKg').value = PRESETS[t.value]; }
+  } else if(t.id === 'pricePerKg'){
+    var m = $('material').value;
+    if(m !== 'custom' && PRESETS[m] !== undefined && parseFloat(t.value) !== PRESETS[m]){ $('material').value = 'custom'; }
+  } else if(t.id === 'usePrinter'){
+    syncPrinterFields();
+  } else if(t.id === 'currency'){
+    db.currency = t.value;
+  } else if(t.id === 'recoveryPercent'){
+    db.recoveryPercent = n(t.value) || 0;
+  }
+  update();
+}
+document.addEventListener('input', onInput);
+document.addEventListener('change', onInput);
+
+$('reset').addEventListener('click', function(){
+  calc = Object.assign({}, CALC_DEFAULTS);
+  applyToDom();
+  syncPrinterFields();
+  update();
+});
+
+function copyText(t){
+  return new Promise(function(resolve){
+    var fallback = function(){
+      try{
+        var ta = document.createElement('textarea');
+        ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        resolve(ok);
+      }catch(err){ resolve(false); }
+    };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){ resolve(true); }, fallback);
+      } else { fallback(); }
+    }catch(err){ fallback(); }
+  });
+}
+
+$('copy').addEventListener('click', function(){
+  if(!last) return;
+  var r = last, s = calc, lines = [];
+  lines.push('Cotización' + (s.name ? ': ' + s.name : ''));
+  lines.push('Cantidad: ' + r.q);
+  lines.push('Precio por pieza: ' + money(r.final));
+  if(r.q > 1) lines.push('Total del pedido: ' + money(r.final * r.q));
+  if(n(s.tax) > 0) lines.push('Incluye impuesto (' + pct(n(s.tax)) + '): ' + money(r.parts.tax) + ' por pieza');
+  lines.push('');
+  lines.push('Costo de producción por pieza: ' + money(r.cost));
+  lines.push('Ganancia neta por pieza: ' + money(r.profit) + ' (' + pct(r.margin) + ')');
+  lines.push('');
+  lines.push('Desglose por pieza:');
+  COMP.forEach(function(c){
+    var v = r.parts[c.k];
+    if(Math.abs(v) >= 0.005) lines.push('- ' + c.l + ': ' + money(v));
+  });
+  var btn = $('copy');
+  copyText(lines.join('\n')).then(function(ok){
+    btn.textContent = ok ? 'Resumen copiado' : 'No se pudo copiar';
+    setTimeout(function(){ btn.textContent = 'Copiar resumen'; }, 1800);
+  });
+});
+
+$('saveProduct').addEventListener('click', function(){
+  readFromDom();
+  var snapshot = Object.assign({}, calc, { qty:1 });
+  var product = {
+    id: uid(),
+    name: (calc.name || 'Producto sin nombre').trim(),
+    printerId: calc.usePrinter || '',
+    supplyId: calc.supplyLink || '',
+    stock: Math.max(0, Math.floor(n($('saveStock').value)) || 0),
+    calc: snapshot,
+    createdAt: Date.now()
+  };
+  db.products.push(product);
+  saveDb();
+  var msg = $('saveMsg');
+  msg.textContent = 'Guardado como «' + product.name + '». Puedes verlo en la pestaña Productos.';
+  msg.hidden = false;
+  setTimeout(function(){ msg.hidden = true; }, 4000);
+});
+
+// Barra inferior en móvil
+var mbar = $('mbar');
+$('goResult').addEventListener('click', function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('resultado').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+});
+if('IntersectionObserver' in window){
+  new IntersectionObserver(function(entries){
+    mbar.classList.toggle('off', entries[0].isIntersecting);
+  }, { threshold: 0.25 }).observe($('resultado'));
+}
+
+/* ==================================================================== */
+/* IMPRESORAS                                                            */
+/* ==================================================================== */
+var printerEditingId = null;
+function printerFormReset(){
+  printerEditingId = null;
+  $('pName').value = ''; $('pCost').value = ''; $('pLife').value = 4000; $('pRecovered').value = 0;
+  $('printerSave').textContent = 'Agregar impresora';
+}
+$('printerCancel').addEventListener('click', function(){ printerFormReset(); $('printerBox').open = false; });
+$('printerSave').addEventListener('click', function(){
+  var name = $('pName').value.trim();
+  if(!name){ $('pName').focus(); return; }
+  var cost = n($('pCost').value);
+  var life = Math.max(1, n($('pLife').value) || 4000);
+  var recovered = Math.max(0, n($('pRecovered').value) || 0);
+  if(printerEditingId){
+    var p = db.printers.filter(function(x){ return x.id === printerEditingId; })[0];
+    if(p){ p.name=name; p.cost=cost; p.lifeHours=life; p.recovered=recovered; }
+  } else {
+    db.printers.push({ id: uid(), name:name, cost:cost, lifeHours:life, recovered:recovered, createdAt: Date.now() });
+  }
+  saveDb();
+  printerFormReset();
+  $('printerBox').open = false;
+  renderPrinters();
+  refreshPrinterSelects();
+});
+
+function printerRecoveredFromSales(printerId){
+  var manual = 0;
+  var p = db.printers.filter(function(x){ return x.id === printerId; })[0];
+  if(p) manual = p.recovered || 0;
+  var fromSales = db.sales.filter(function(s){ return s.printerId === printerId; })
+    .reduce(function(sum, s){ return sum + (s.recoveredAmt || 0); }, 0);
+  return manual + fromSales;
+}
+
+function renderPrinters(){
+  refreshPrinterSelects();
+  $('recoveryPercent').value = db.recoveryPercent;
+  var wrap = $('printerCards');
+  wrap.innerHTML = '';
+  $('printerEmpty').hidden = db.printers.length > 0;
+  db.printers.forEach(function(p){
+    var recovered = printerRecoveredFromSales(p.id);
+    var pctv = p.cost > 0 ? Math.min(100, recovered / p.cost * 100) : 100;
+    var paid = p.cost > 0 ? recovered >= p.cost - 0.005 : true;
+    var usedBy = db.products.filter(function(pr){ return pr.printerId === p.id; }).length;
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card-top"><h3>'+esc(p.name)+'</h3>'+
+      '<span class="badge '+(paid?'ok':'muted')+'">'+(paid?'Pagada':'Pagando')+'</span></div>'+
+      '<div class="rowline"><span class="muted">Costo</span><b>'+money(p.cost)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Recuperado</span><b>'+money(recovered)+'</b></div>'+
+      '<div class="progress"><i style="width:'+pctv+'%"></i></div>'+
+      '<div class="rowline"><span class="muted">Vida útil</span><span>'+p.lifeHours+' h</span></div>'+
+      '<div class="rowline"><span class="muted">Productos asignados</span><span>'+usedBy+'</span></div>'+
+      '<div class="card-actions">'+
+        '<button class="btn ghost small" data-act="edit">Editar</button>'+
+        '<button class="btn ghost small" data-act="paid">Marcar pagada</button>'+
+        '<button class="icon-btn" data-act="del">Eliminar</button>'+
+      '</div>';
+    card.querySelector('[data-act="edit"]').addEventListener('click', function(){
+      printerEditingId = p.id;
+      $('pName').value = p.name; $('pCost').value = p.cost; $('pLife').value = p.lifeHours; $('pRecovered').value = p.recovered || 0;
+      $('printerSave').textContent = 'Guardar cambios';
+      $('printerBox').open = true;
+      $('printerBox').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    card.querySelector('[data-act="paid"]').addEventListener('click', function(){
+      var salesRecovered = recovered - (p.recovered || 0);
+      p.recovered = Math.max(0, p.cost - salesRecovered);
+      saveDb(); renderPrinters();
+    });
+    card.querySelector('[data-act="del"]').addEventListener('click', function(e){
+      confirmDelete(e.currentTarget, function(){
+        db.printers = db.printers.filter(function(x){ return x.id !== p.id; });
+        db.products.forEach(function(pr){ if(pr.printerId === p.id) pr.printerId = ''; });
+        saveDb(); renderPrinters(); refreshPrinterSelects();
+      });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+/* ==================================================================== */
+/* INSUMOS                                                               */
+/* ==================================================================== */
+var supplyEditingId = null;
+function supplyFormReset(){
+  supplyEditingId = null;
+  $('sName').value=''; $('sStock').value=''; $('sCost').value=''; $('sMin').value=200;
+  $('supplySave').textContent = 'Agregar insumo';
+}
+$('supplyCancel').addEventListener('click', function(){ supplyFormReset(); $('supplyBox').open = false; });
+$('supplySave').addEventListener('click', function(){
+  var name = $('sName').value.trim();
+  if(!name){ $('sName').focus(); return; }
+  var stock = Math.max(0, n($('sStock').value));
+  var costPerKg = Math.max(0, n($('sCost').value));
+  var minStock = Math.max(0, n($('sMin').value) || 0);
+  if(supplyEditingId){
+    var s = db.supplies.filter(function(x){ return x.id === supplyEditingId; })[0];
+    if(s){ s.name=name; s.stock=stock; s.costPerKg=costPerKg; s.minStock=minStock; }
+  } else {
+    db.supplies.push({ id: uid(), name:name, stock:stock, costPerKg:costPerKg, minStock:minStock, createdAt: Date.now() });
+  }
+  saveDb();
+  supplyFormReset();
+  $('supplyBox').open = false;
+  renderSupplies();
+  refreshSupplySelects();
+});
+
+function renderSupplies(target){
+  refreshSupplySelects();
+  var wrap = $('supplyCards');
+  wrap.innerHTML = '';
+  $('supplyEmpty').hidden = db.supplies.length > 0;
+  db.supplies.forEach(function(s){
+    var low = s.stock < s.minStock;
+    var value = s.stock/1000 * s.costPerKg;
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card-top"><h3>'+esc(s.name)+'</h3>'+
+      '<span class="badge '+(low?'warn':'ok')+'">'+(low?'Stock bajo':'OK')+'</span></div>'+
+      '<div class="rowline"><span class="muted">Stock</span><b>'+grams(s.stock)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Precio por kg</span><b>'+money(s.costPerKg)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Valor en inventario</span><b>'+money(value)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Aviso bajo</span><span>'+grams(s.minStock)+'</span></div>'+
+      '<div class="fields" style="grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">'+
+        '<div class="field"><div class="inp"><input type="number" min="0" step="any" placeholder="g a agregar" data-role="addg"></div></div>'+
+        '<div class="field"><div class="inp"><input type="number" min="0" step="any" placeholder="pagado total" data-role="addcost"></div></div>'+
+      '</div>'+
+      '<div class="card-actions">'+
+        '<button class="btn ghost small" data-act="addstock">Agregar compra</button>'+
+        '<button class="icon-btn" data-act="edit">Editar</button>'+
+        '<button class="icon-btn" data-act="del">Eliminar</button>'+
+      '</div>';
+    card.querySelector('[data-act="addstock"]').addEventListener('click', function(){
+      var g = n(card.querySelector('[data-role="addg"]').value);
+      var paid = n(card.querySelector('[data-role="addcost"]').value);
+      if(g <= 0) return;
+      var newStock = s.stock + g;
+      if(paid > 0){
+        var oldValue = s.stock/1000 * s.costPerKg;
+        var addedValue = paid;
+        s.costPerKg = newStock > 0 ? (oldValue + addedValue) / (newStock/1000) : s.costPerKg;
+      }
+      s.stock = newStock;
+      saveDb(); renderSupplies();
+    });
+    card.querySelector('[data-act="edit"]').addEventListener('click', function(){
+      supplyEditingId = s.id;
+      $('sName').value=s.name; $('sStock').value=s.stock; $('sCost').value=s.costPerKg; $('sMin').value=s.minStock;
+      $('supplySave').textContent = 'Guardar cambios';
+      $('supplyBox').open = true;
+      $('supplyBox').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    card.querySelector('[data-act="del"]').addEventListener('click', function(e){
+      confirmDelete(e.currentTarget, function(){
+        db.supplies = db.supplies.filter(function(x){ return x.id !== s.id; });
+        db.products.forEach(function(pr){ if(pr.supplyId === s.id) pr.supplyId = ''; });
+        saveDb(); renderSupplies(); refreshSupplySelects();
+      });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+/* ==================================================================== */
+/* PRODUCTOS                                                             */
+/* ==================================================================== */
+function productLine(p){
+  var r = compute(p.calc);
+  return r;
+}
+function printLabel(p, r){
+  $('plabelName').textContent = p.name;
+  $('plabelPrice').textContent = money(r.final);
+  var qrHost = $('plabelQr');
+  qrHost.innerHTML = '';
+  if(window.QRCode){
+    new QRCode(qrHost, { text: 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final), width:160, height:160, correctLevel: QRCode.CorrectLevel.M });
+  }
+  window.print();
+}
+
+function renderProductos(){
+  var wrap = $('productosCards');
+  wrap.innerHTML = '';
+  $('productosEmpty').hidden = db.products.length > 0;
+  db.products.forEach(function(p){
+    var r = productLine(p);
+    var printer = db.printers.filter(function(x){ return x.id === p.printerId; })[0];
+    var supply = db.supplies.filter(function(x){ return x.id === p.supplyId; })[0];
+    var card = document.createElement('div');
+    card.className = 'card';
+    var qrId = 'qr-' + p.id;
+    card.innerHTML =
+      '<div class="card-top"><h3>'+esc(p.name)+'</h3></div>'+
+      '<div class="rowline"><span class="muted">Precio de venta</span><b>'+money(r.final)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Costo</span><span>'+money(r.cost)+'</span></div>'+
+      '<div class="rowline"><span class="muted">Ganancia</span><span>'+money(r.profit)+' ('+pct(r.margin)+')</span></div>'+
+      (printer ? '<div class="rowline"><span class="muted">Impresora</span><span>'+esc(printer.name)+'</span></div>' : '')+
+      (supply ? '<div class="rowline"><span class="muted">Insumo</span><span>'+esc(supply.name)+' · '+grams(r.grams)+'/u</span></div>' : '')+
+      '<div class="rowline"><span class="muted">En stock</span>'+
+        '<span class="stepper"><button data-act="dec">–</button><span data-role="stockv">'+p.stock+'</span><button data-act="inc">+</button></span></div>'+
+      '<div class="qr-row"><div class="qr-thumb" id="'+qrId+'"></div>'+
+        '<button class="btn ghost small" data-act="print" style="flex:1">Imprimir etiqueta</button></div>'+
+      '<div class="card-actions">'+
+        '<button class="btn ghost small" data-act="edit">Editar</button>'+
+        '<button class="icon-btn" data-act="del">Eliminar</button>'+
+      '</div>';
+    if(window.QRCode){
+      new QRCode(card.querySelector('#'+qrId), { text: 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final), width:64, height:64, correctLevel: QRCode.CorrectLevel.M });
+    } else {
+      card.querySelector('#'+qrId).textContent = 'QR';
+    }
+    card.querySelector('[data-act="inc"]').addEventListener('click', function(){
+      p.stock++; saveDb(); card.querySelector('[data-role="stockv"]').textContent = p.stock;
+    });
+    card.querySelector('[data-act="dec"]').addEventListener('click', function(){
+      p.stock = Math.max(0, p.stock - 1); saveDb(); card.querySelector('[data-role="stockv"]').textContent = p.stock;
+    });
+    card.querySelector('[data-act="print"]').addEventListener('click', function(){ printLabel(p, r); });
+    card.querySelector('[data-act="edit"]').addEventListener('click', function(){
+      calc = Object.assign({}, p.calc);
+      applyToDom();
+      syncPrinterFields();
+      $('name').value = p.name;
+      db.products = db.products.filter(function(x){ return x.id !== p.id; });
+      saveDb();
+      update();
+      showView('calc');
+      $('saveMsg').hidden = true;
+    });
+    card.querySelector('[data-act="del"]').addEventListener('click', function(e){
+      confirmDelete(e.currentTarget, function(){
+        db.products = db.products.filter(function(x){ return x.id !== p.id; });
+        saveDb(); renderProductos();
+      });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+/* ==================================================================== */
+/* VENTAS                                                                */
+/* ==================================================================== */
+function refreshSaleProductSelect(){
+  var sel = $('saleProduct');
+  sel.innerHTML = db.products.map(function(p){
+    return '<option value="'+p.id+'">'+esc(p.name)+' (stock: '+p.stock+')</option>';
+  }).join('');
+  $('saleFormEmpty').hidden = db.products.length > 0;
+  $('saleSave').disabled = db.products.length === 0;
+}
+
+function registerSale(productId, qty, dateStr){
+  var p = db.products.filter(function(x){ return x.id === productId; })[0];
+  if(!p) return false;
+  qty = Math.max(1, Math.floor(qty) || 1);
+  var r = productLine(p);
+  p.stock = Math.max(0, p.stock - qty);
+
+  var recoveredAmt = 0;
+  if(p.printerId){
+    var printer = db.printers.filter(function(x){ return x.id === p.printerId; })[0];
+    if(printer){
+      var already = printerRecoveredFromSales(printer.id);
+      var room = Math.max(0, printer.cost - already);
+      var want = r.profit * qty * (db.recoveryPercent/100);
+      recoveredAmt = Math.min(want, room);
+    }
+  }
+  var supplyDeducted = 0;
+  if(p.supplyId){
+    var supply = db.supplies.filter(function(x){ return x.id === p.supplyId; })[0];
+    if(supply){
+      supplyDeducted = r.grams * qty;
+      supply.stock = Math.max(0, supply.stock - supplyDeducted);
+    }
+  }
+  db.sales.push({
+    id: uid(), productId: p.id, productName: p.name, qty: qty,
+    date: dateStr || todayStr(), unitPrice: r.final, unitCost: r.cost, unitProfit: r.profit,
+    printerId: p.printerId || '', recoveredAmt: recoveredAmt,
+    supplyId: p.supplyId || '', supplyDeducted: supplyDeducted
+  });
+  saveDb();
+  return true;
+}
+
+function revertSale(sale){
+  var p = db.products.filter(function(x){ return x.id === sale.productId; })[0];
+  if(p) p.stock += sale.qty;
+  if(sale.supplyId && sale.supplyDeducted){
+    var supply = db.supplies.filter(function(x){ return x.id === sale.supplyId; })[0];
+    if(supply) supply.stock += sale.supplyDeducted;
+  }
+  db.sales = db.sales.filter(function(x){ return x.id !== sale.id; });
+}
+
+$('saleSave').addEventListener('click', function(){
+  var pid = $('saleProduct').value;
+  if(!pid) return;
+  var qty = Math.max(1, Math.floor(n($('saleQty').value)) || 1);
+  var date = $('saleDate').value || todayStr();
+  if(registerSale(pid, qty, date)){
+    $('saleQty').value = 1;
+    renderVentas();
+  }
+});
+
+function renderVentas(){
+  refreshSaleProductSelect();
+  if(!$('saleDate').value) $('saleDate').value = todayStr();
+  var body = $('salesBody');
+  body.innerHTML = '';
+  var sorted = db.sales.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.id||'').localeCompare(a.id||''); });
+  $('salesEmpty').hidden = sorted.length > 0;
+  sorted.forEach(function(s){
+    var printer = db.printers.filter(function(x){ return x.id === s.printerId; })[0];
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+esc(s.date)+'</td><td>'+esc(s.productName)+'</td><td>'+s.qty+'</td>'+
+      '<td>'+money(s.unitPrice)+'</td><td>'+money(s.unitPrice*s.qty)+'</td>'+
+      '<td>'+(printer?esc(printer.name):'—')+'</td><td>'+(s.recoveredAmt?money(s.recoveredAmt):'—')+'</td>'+
+      '<td><button class="icon-btn" data-act="del">Deshacer</button></td>';
+    tr.querySelector('[data-act="del"]').addEventListener('click', function(e){
+      confirmDelete(e.currentTarget, function(){
+        revertSale(s);
+        saveDb(); renderVentas(); renderProductos();
+      });
+    });
+    body.appendChild(tr);
+  });
+}
+
+/* ==================================================================== */
+/* RESUMEN                                                               */
+/* ==================================================================== */
+function renderResumen(){
+  var totalPrinters = db.printers.reduce(function(sum,p){ return sum + p.cost; }, 0);
+  var totalRecovered = db.printers.reduce(function(sum,p){ return sum + Math.min(p.cost, printerRecoveredFromSales(p.id)); }, 0);
+  var paidCount = db.printers.filter(function(p){ return printerRecoveredFromSales(p.id) >= p.cost - 0.005; }).length;
+  var stockValue = db.products.reduce(function(sum,p){ return sum + productLine(p).cost * p.stock; }, 0);
+  var revenue = db.sales.reduce(function(sum,s){ return sum + s.unitPrice*s.qty; }, 0);
+  var profitTotal = db.sales.reduce(function(sum,s){ return sum + s.unitProfit*s.qty; }, 0);
+  var unitsSold = db.sales.reduce(function(sum,s){ return sum + s.qty; }, 0);
+
+  var stats = [
+    {k:'Invertido en impresoras', v: money(totalPrinters)},
+    {k:'Recuperado', v: money(totalRecovered) + (totalPrinters>0 ? ' <small>('+pct(totalPrinters>0?totalRecovered/totalPrinters*100:0)+')</small>' : '')},
+    {k:'Impresoras pagadas', v: paidCount + ' <small>de ' + db.printers.length + '</small>'},
+    {k:'Valor del inventario', v: money(stockValue)},
+    {k:'Ingresos totales', v: money(revenue)},
+    {k:'Ganancia neta acumulada', v: money(profitTotal)},
+    {k:'Piezas vendidas', v: String(unitsSold)}
+  ];
+  var wrap = $('resumenStats');
+  wrap.innerHTML = stats.map(function(s){
+    return '<div class="stat"><div class="k">'+s.k+'</div><div class="v">'+s.v+'</div></div>';
+  }).join('');
+
+  var low = db.supplies.filter(function(s){ return s.stock < s.minStock; });
+  $('lowStockPanel').hidden = low.length === 0;
+  var lowWrap = $('lowStockList');
+  lowWrap.innerHTML = low.map(function(s){
+    return '<div class="card"><div class="card-top"><h3>'+esc(s.name)+'</h3><span class="badge warn">Stock bajo</span></div>'+
+      '<div class="rowline"><span class="muted">Stock actual</span><b>'+grams(s.stock)+'</b></div>'+
+      '<div class="rowline"><span class="muted">Aviso en</span><span>'+grams(s.minStock)+'</span></div></div>';
+  }).join('');
+}
+
+/* ==================================================================== */
+/* COPIA DE SEGURIDAD                                                    */
+/* ==================================================================== */
+var downloadsCap = null;
+if(window.claude && window.claude.use){
+  window.claude.use('downloads').then(function(d){ downloadsCap = d; }).catch(function(){ downloadsCap = null; });
+}
+
+function buildBackup(){
+  return {
+    app: 'LUMA LAB 3D', version: 1, exportedAt: new Date().toISOString(),
+    currency: db.currency, recoveryPercent: db.recoveryPercent,
+    printers: db.printers, supplies: db.supplies, products: db.products, sales: db.sales,
+    calc: calc
+  };
+}
+function backupFilename(){
+  return 'lumalab3d-backup-' + todayStr() + '.json';
+}
+function showBackupMsg(text){
+  var m = $('backupMsg');
+  m.textContent = text;
+  m.hidden = false;
+  setTimeout(function(){ m.hidden = true; }, 5000);
+}
+
+$('backupDownload').addEventListener('click', function(){
+  var json = JSON.stringify(buildBackup(), null, 2);
+  if(downloadsCap){
+    downloadsCap.save({ filename: backupFilename(), data: new Blob([json], {type:'application/json'}) })
+      .then(function(){ showBackupMsg('Copia de seguridad guardada.'); })
+      .catch(function(err){
+        if(err && err.code === 'declined') return;
+        copyText(json).then(function(ok){
+          showBackupMsg(ok ? 'No se pudo descargar el archivo; se copió el respaldo como texto en su lugar.' : 'No se pudo generar la copia de seguridad.');
+        });
+      });
+  } else {
+    copyText(json).then(function(ok){
+      showBackupMsg(ok ? 'La descarga de archivos no está disponible aquí; se copió el respaldo como texto. Pégalo en Notas para guardarlo.' : 'No se pudo copiar el respaldo.');
+    });
+  }
+});
+
+$('backupCopy').addEventListener('click', function(){
+  copyText(JSON.stringify(buildBackup())).then(function(ok){
+    showBackupMsg(ok ? 'Datos copiados. Pégalos en Notas, un correo o donde los quieras guardar.' : 'No se pudo copiar.');
+  });
+});
+
+$('backupFile').addEventListener('change', function(e){
+  var file = e.target.files && e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var data;
+    try{ data = JSON.parse(reader.result); }catch(err){ showBackupMsg('Ese archivo no es una copia de seguridad válida.'); e.target.value=''; return; }
+    if(!data || (!Array.isArray(data.products) && !Array.isArray(data.printers))){
+      showBackupMsg('Ese archivo no es una copia de seguridad válida.'); e.target.value=''; return;
+    }
+    db.currency = data.currency || db.currency;
+    db.recoveryPercent = (typeof data.recoveryPercent === 'number') ? data.recoveryPercent : db.recoveryPercent;
+    db.printers = Array.isArray(data.printers) ? data.printers : db.printers;
+    db.supplies = Array.isArray(data.supplies) ? data.supplies : db.supplies;
+    db.products = Array.isArray(data.products) ? data.products : db.products;
+    db.sales = Array.isArray(data.sales) ? data.sales : db.sales;
+    if(data.calc) calc = Object.assign({}, CALC_DEFAULTS, data.calc);
+    saveDb(); saveCalc();
+    applyToDom(); syncPrinterFields(); refreshPrinterSelects(); refreshSupplySelects();
+    update(); renderResumen();
+    showBackupMsg('Copia de seguridad restaurada: ' + db.printers.length + ' impresoras, ' + db.supplies.length + ' insumos, ' + db.products.length + ' productos, ' + db.sales.length + ' ventas.');
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- Inicio ---------- */
+applyToDom();
+syncPrinterFields();
+refreshPrinterSelects();
+refreshSupplySelects();
+update();
+showView('calc');
+})();
+</script>
+
+</body>
+</html>
