@@ -285,10 +285,10 @@ table.tbl tr:last-child td{border-bottom:0}
               <div class="inp"><input id="support" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
             </div>
             <div class="field full">
-              <label for="supplyLink">Insumo vinculado (para descontar stock al vender)</label>
+              <label for="supplyLink">Insumo vinculado (para descontar stock al fabricar)</label>
               <div class="inp"><select id="supplyLink"><option value="">— Sin vincular —</option></select></div>
             </div>
-            <p class="hint full">El peso lo muestra tu laminador (Cura, Bambu Studio, PrusaSlicer). Si vinculas un insumo, cada venta descuenta el peso usado del inventario de filamento.</p>
+            <p class="hint full">El peso lo muestra tu laminador (Cura, Bambu Studio, PrusaSlicer). Si vinculas un insumo, el peso usado se descuenta del inventario de filamento en cuanto la pieza entra a stock (no cuando se vende).</p>
           </div>
         </section>
 
@@ -527,7 +527,7 @@ table.tbl tr:last-child td{border-bottom:0}
   <section class="view" id="view-insumos" hidden>
     <div class="panel">
       <h2>Insumos (filamento y más)</h2>
-      <p class="sub">Controla cuánto material tienes disponible. Al vincular un insumo a un producto, cada venta descuenta el peso usado automáticamente.</p>
+      <p class="sub">Controla cuánto material tienes disponible. Al vincular un insumo a un producto, el peso usado se descuenta en cuanto la pieza entra a stock (no cuando se vende).</p>
 
       <details class="addbox" id="supplyBox">
         <summary>Agregar insumo</summary>
@@ -564,7 +564,7 @@ table.tbl tr:last-child td{border-bottom:0}
   <section class="view" id="view-ventas" hidden>
     <div class="panel">
       <h2>Registrar venta</h2>
-      <p class="sub">Descuenta stock del producto y del insumo vinculado, y abona a la impresora asignada.</p>
+      <p class="sub">Descuenta stock del producto y abona a la impresora asignada. El filamento ya se descontó al fabricar la pieza.</p>
       <div class="inline-form">
         <div class="field">
           <label for="saleProduct">Producto</label>
@@ -1023,9 +1023,11 @@ $('saveProduct').addEventListener('click', function(){
     createdAt: Date.now()
   };
   db.products.push(product);
+  adjustSupplyForStock(product, product.stock);
   saveDb();
   var msg = $('saveMsg');
   msg.textContent = 'Guardado como «' + product.name + '». Puedes verlo en la pestaña Productos.';
+  if(product.supplyId && product.stock > 0) msg.textContent += ' Se descontó el filamento usado del insumo vinculado.';
   msg.hidden = false;
   setTimeout(function(){ msg.hidden = true; }, 4000);
 });
@@ -1222,6 +1224,16 @@ function productLine(p){
   var r = compute(p.calc);
   return r;
 }
+/* Descuenta o devuelve filamento del insumo vinculado cuando cambia el stock
+   de un producto (al crearlo, al ajustarlo con +/-, o al eliminarlo) —
+   el material se contabiliza al fabricar la pieza, no al venderla. */
+function adjustSupplyForStock(product, deltaUnits){
+  if(!deltaUnits || !product.supplyId) return;
+  var supply = db.supplies.filter(function(x){ return x.id === product.supplyId; })[0];
+  if(!supply) return;
+  var gramsPerUnit = productLine(product).grams;
+  supply.stock = Math.max(0, supply.stock - gramsPerUnit * deltaUnits);
+}
 function printLabel(p, r){
   $('plabelName').textContent = p.name;
   $('plabelPrice').textContent = money(r.final);
@@ -1265,13 +1277,19 @@ function renderProductos(){
       card.querySelector('#'+qrId).textContent = 'QR';
     }
     card.querySelector('[data-act="inc"]').addEventListener('click', function(){
-      p.stock++; saveDb(); card.querySelector('[data-role="stockv"]').textContent = p.stock;
+      p.stock++; adjustSupplyForStock(p, 1); saveDb();
+      card.querySelector('[data-role="stockv"]').textContent = p.stock;
+      renderSupplies();
     });
     card.querySelector('[data-act="dec"]').addEventListener('click', function(){
-      p.stock = Math.max(0, p.stock - 1); saveDb(); card.querySelector('[data-role="stockv"]').textContent = p.stock;
+      if(p.stock <= 0) return;
+      p.stock -= 1; adjustSupplyForStock(p, -1); saveDb();
+      card.querySelector('[data-role="stockv"]').textContent = p.stock;
+      renderSupplies();
     });
     card.querySelector('[data-act="print"]').addEventListener('click', function(){ printLabel(p, r); });
     card.querySelector('[data-act="edit"]').addEventListener('click', function(){
+      adjustSupplyForStock(p, -p.stock); // devuelve al insumo el filamento de las piezas aún no vendidas
       calc = Object.assign({}, p.calc);
       applyToDom();
       syncPrinterFields();
@@ -1284,8 +1302,9 @@ function renderProductos(){
     });
     card.querySelector('[data-act="del"]').addEventListener('click', function(e){
       confirmDelete(e.currentTarget, function(){
+        adjustSupplyForStock(p, -p.stock); // devuelve al insumo el filamento de las piezas aún no vendidas
         db.products = db.products.filter(function(x){ return x.id !== p.id; });
-        saveDb(); renderProductos();
+        saveDb(); renderProductos(); renderSupplies();
       });
     });
     wrap.appendChild(card);
@@ -1321,31 +1340,23 @@ function registerSale(productId, qty, dateStr){
       recoveredAmt = Math.min(want, room);
     }
   }
-  var supplyDeducted = 0;
-  if(p.supplyId){
-    var supply = db.supplies.filter(function(x){ return x.id === p.supplyId; })[0];
-    if(supply){
-      supplyDeducted = r.grams * qty;
-      supply.stock = Math.max(0, supply.stock - supplyDeducted);
-    }
-  }
+  // El filamento ya se descontó del insumo cuando la pieza entró a stock
+  // (ver adjustSupplyForStock), así que la venta no vuelve a tocar el insumo.
   db.sales.push({
     id: uid(), productId: p.id, productName: p.name, qty: qty,
     date: dateStr || todayStr(), unitPrice: r.final, unitCost: r.cost, unitProfit: r.profit,
-    printerId: p.printerId || '', recoveredAmt: recoveredAmt,
-    supplyId: p.supplyId || '', supplyDeducted: supplyDeducted
+    printerId: p.printerId || '', recoveredAmt: recoveredAmt
   });
   saveDb();
   return true;
 }
 
 function revertSale(sale){
+  // El insumo no se toca aquí: el filamento se contabilizó al fabricar la
+  // pieza (cuando entró a stock), no al venderla, así que deshacer una venta
+  // solo repone el stock del producto.
   var p = db.products.filter(function(x){ return x.id === sale.productId; })[0];
   if(p) p.stock += sale.qty;
-  if(sale.supplyId && sale.supplyDeducted){
-    var supply = db.supplies.filter(function(x){ return x.id === sale.supplyId; })[0];
-    if(supply) supply.stock += sale.supplyDeducted;
-  }
   db.sales = db.sales.filter(function(x){ return x.id !== sale.id; });
 }
 
