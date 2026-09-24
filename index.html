@@ -1239,14 +1239,34 @@ function adjustSupplyForStock(product, deltaUnits){
   var gramsPerUnit = productLine(product).grams;
   supply.stock = Math.max(0, supply.stock - gramsPerUnit * deltaUnits);
 }
+/* La librería qrcodejs usa una capacidad fija por defecto y lanza una
+   excepción ("code length overflow") si el texto es demasiado largo
+   (por ejemplo, un nombre de producto largo). Esto no significa que el
+   producto esté dañado: solo hay que acortar el texto del QR hasta que
+   quepa, probando primero con el texto completo. */
+function renderQR(container, fullText){
+  container.innerHTML = '';
+  if(!window.QRCode){ container.textContent = 'QR'; return; }
+  var attempts = [fullText];
+  if(fullText.length > 45) attempts.push(fullText.slice(0, 45));
+  if(fullText.length > 25) attempts.push(fullText.slice(0, 25));
+  attempts.push('LUMA LAB 3D');
+  for(var i=0; i<attempts.length; i++){
+    try{
+      container.innerHTML = '';
+      new QRCode(container, { text: attempts[i], width: container._qrW || 64, height: container._qrH || 64, correctLevel: QRCode.CorrectLevel.M });
+      return;
+    }catch(err){ /* probar el siguiente texto, más corto */ }
+  }
+  container.textContent = 'QR';
+}
+
 function printLabel(p, r){
   $('plabelName').textContent = p.name;
   $('plabelPrice').textContent = money(r.final);
   var qrHost = $('plabelQr');
-  qrHost.innerHTML = '';
-  if(window.QRCode){
-    new QRCode(qrHost, { text: 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final), width:160, height:160, correctLevel: QRCode.CorrectLevel.M });
-  }
+  qrHost._qrW = 160; qrHost._qrH = 160;
+  renderQR(qrHost, 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final));
   window.print();
 }
 
@@ -1277,11 +1297,7 @@ function renderProductos(){
         '<button class="btn ghost small" data-act="edit">Editar</button>'+
         '<button class="icon-btn" data-act="del">Eliminar</button>'+
       '</div>';
-    if(window.QRCode){
-      new QRCode(card.querySelector('#'+qrId), { text: 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final), width:64, height:64, correctLevel: QRCode.CorrectLevel.M });
-    } else {
-      card.querySelector('#'+qrId).textContent = 'QR';
-    }
+    renderQR(card.querySelector('#'+qrId), 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final));
     card.querySelector('[data-act="inc"]').addEventListener('click', function(){
       p.stock++; adjustSupplyForStock(p, 1); saveDb();
       card.querySelector('[data-role="stockv"]').textContent = p.stock;
@@ -1317,8 +1333,8 @@ function renderProductos(){
    }catch(err){
     var badCard = document.createElement('div');
     badCard.className = 'card';
-    badCard.innerHTML = '<div class="card-top"><h3>'+esc(p && p.name || 'Producto dañado')+'</h3><span class="badge warn">Datos dañados</span></div>'+
-      '<p class="muted" style="font-size:13px">Este producto quedó con datos de una versión anterior y no se puede calcular. Bórralo y créalo de nuevo desde la Calculadora.</p>'+
+    badCard.innerHTML = '<div class="card-top"><h3>'+esc(p && p.name || 'Producto con error')+'</h3><span class="badge warn">No se pudo mostrar</span></div>'+
+      '<p class="muted" style="font-size:13px">Hubo un problema al calcular o mostrar este producto. Puedes eliminarlo e intentar crearlo de nuevo desde la Calculadora.</p>'+
       '<div class="card-actions"><button class="icon-btn" data-act="delbad">Eliminar</button></div>';
     badCard.querySelector('[data-act="delbad"]').addEventListener('click', function(e){
       confirmDelete(e.currentTarget, function(){
