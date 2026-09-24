@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg:#ECEFF3; --surface:#FFFFFF; --surface-2:#F4F6F8; --ink:#141D28; --muted:#586574; --line:#D3D9E0;
@@ -198,6 +199,30 @@ table.tbl tr:last-child td{border-bottom:0}
 .roadmap{border:1px dashed var(--line);border-radius:14px;padding:16px 18px;margin-top:6px}
 .roadmap h3{margin:0 0 8px;font-family:var(--font-display);font-size:15px}
 .roadmap ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.6}
+
+/* Foto de producto */
+.photo-box{margin:16px 0}
+.photo-box>label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.photo-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.photo-preview{width:76px;height:76px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-preview .muted{font-size:11px;text-align:center;padding:4px}
+.photo-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.product-photo{width:100%;height:150px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
+
+/* Cotización (overlay a pantalla completa) */
+.quote-overlay{position:fixed;inset:0;background:rgba(15,20,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;z-index:50}
+.quote-card{background:var(--surface);border-radius:20px;max-width:420px;width:100%;padding:22px;position:relative;box-shadow:0 20px 60px -20px rgba(0,0,0,.5)}
+.quote-close{position:absolute;top:14px;right:14px}
+.quote-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-right:70px}
+.quote-header h2{margin:0;font-family:var(--font-display);font-size:19px;font-weight:800}
+.quote-header .quote-logo{width:40px;height:40px;border-radius:10px;object-fit:cover;flex:none}
+.quote-photo{width:100%;max-height:240px;object-fit:cover;border-radius:14px;margin-bottom:16px;border:1px solid var(--line)}
+.quote-name{margin:0 0 6px;font-family:var(--font-display);font-size:20px;font-weight:700}
+.quote-price{font-family:var(--font-display);font-size:30px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.quote-date{margin:0 0 18px}
+.quote-actions{display:flex;flex-direction:column;gap:10px}
+.quote-msg{margin-top:12px;text-align:center}
 
 #printArea{display:none}
 @media print{
@@ -467,6 +492,19 @@ table.tbl tr:last-child td{border-bottom:0}
               <div class="inp"><input id="saveStock" type="number" inputmode="numeric" min="0" step="1" value="1"><span class="unit">u</span></div>
             </div>
           </div>
+          <div class="photo-box">
+            <label>Foto del producto (opcional)</label>
+            <div class="photo-row">
+              <div class="photo-preview" id="savePhotoPreview"><span class="muted">Sin foto</span></div>
+              <div class="photo-actions">
+                <label class="btn ghost small" for="savePhotoCamera">Tomar foto</label>
+                <input id="savePhotoCamera" type="file" accept="image/*" capture="environment" style="display:none">
+                <label class="btn ghost small" for="savePhotoGallery">Elegir de galería</label>
+                <input id="savePhotoGallery" type="file" accept="image/*" style="display:none">
+                <button class="icon-btn" id="savePhotoRemove" type="button" hidden>Quitar foto</button>
+              </div>
+            </div>
+          </div>
           <button class="btn" id="saveProduct" type="button">Guardar producto</button>
           <p class="ok-msg" id="saveMsg" hidden></p>
         </div>
@@ -660,6 +698,28 @@ table.tbl tr:last-child td{border-bottom:0}
   <div id="plabelQr"></div>
 </div>
 
+<div id="quoteOverlay" class="quote-overlay" hidden>
+  <div class="quote-card">
+    <button class="icon-btn quote-close" id="quoteClose" type="button">Cerrar ✕</button>
+    <div class="quote-header">
+      <img class="quote-logo" id="quoteLogo" alt="LUMA LAB 3D">
+      <div>
+        <h2>LUMA LAB 3D</h2>
+        <p class="muted" style="margin:0;font-size:13px">Cotización</p>
+      </div>
+    </div>
+    <img class="quote-photo" id="quotePhoto" hidden alt="Foto del producto">
+    <h3 class="quote-name" id="quoteName"></h3>
+    <div class="quote-price" id="quotePrice"></div>
+    <p class="muted quote-date" id="quoteDate"></p>
+    <div class="quote-actions" id="quoteActions">
+      <button class="btn" id="quoteShare" type="button">Compartir cotización</button>
+      <button class="btn ghost" id="quoteDownload" type="button">Descargar PDF</button>
+    </div>
+    <p class="muted quote-msg" id="quoteMsg" hidden></p>
+  </div>
+</div>
+
 <script>
 (function(){
 'use strict';
@@ -737,7 +797,10 @@ function loadDb(){
   if(!Array.isArray(db.sales)) db.sales = [];
   return db;
 }
-function saveDb(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+function saveDb(){
+  try{ localStorage.setItem(KEY, JSON.stringify(db)); return true; }
+  catch(e){ return false; }
+}
 
 function loadCalc(){
   var s = Object.assign({}, CALC_DEFAULTS);
@@ -1015,6 +1078,60 @@ $('copy').addEventListener('click', function(){
   });
 });
 
+/* ---------- Foto de producto ---------- */
+var pendingPhoto = null;
+function setSavePhotoPreview(dataUrl){
+  var box = $('savePhotoPreview');
+  if(dataUrl){
+    box.innerHTML = '<img src="'+dataUrl+'" alt="Foto del producto">';
+    $('savePhotoRemove').hidden = false;
+  } else {
+    box.innerHTML = '<span class="muted">Sin foto</span>';
+    $('savePhotoRemove').hidden = true;
+  }
+}
+function readAndCompressImage(file, maxDim, quality){
+  return new Promise(function(resolve, reject){
+    if(!file){ reject(new Error('sin archivo')); return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try{ resolve(canvas.toDataURL('image/jpeg', quality)); }
+        catch(err){ reject(err); }
+      };
+      img.onerror = function(){ reject(new Error('No se pudo leer la imagen')); };
+      img.src = reader.result;
+    };
+    reader.onerror = function(){ reject(new Error('No se pudo leer el archivo')); };
+    reader.readAsDataURL(file);
+  });
+}
+function handlePhotoInput(e){
+  var file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  readAndCompressImage(file, 900, 0.72).then(function(dataUrl){
+    pendingPhoto = dataUrl;
+    setSavePhotoPreview(dataUrl);
+  }).catch(function(){
+    var msg = $('saveMsg');
+    msg.textContent = 'No se pudo procesar esa foto. Prueba con otra.';
+    msg.hidden = false;
+    setTimeout(function(){ msg.hidden = true; }, 4000);
+  });
+}
+$('savePhotoCamera').addEventListener('change', handlePhotoInput);
+$('savePhotoGallery').addEventListener('change', handlePhotoInput);
+$('savePhotoRemove').addEventListener('click', function(){ pendingPhoto = null; setSavePhotoPreview(null); });
+
 $('saveProduct').addEventListener('click', function(){
   readFromDom();
   var snapshot = Object.assign({}, calc, { qty:1 });
@@ -1024,13 +1141,27 @@ $('saveProduct').addEventListener('click', function(){
     printerId: calc.usePrinter || '',
     supplyId: calc.supplyLink || '',
     stock: Math.max(0, Math.floor(n($('saveStock').value)) || 0),
+    photo: pendingPhoto || '',
     calc: snapshot,
     createdAt: Date.now()
   };
   db.products.push(product);
   adjustSupplyForStock(product, product.stock);
-  saveDb();
+  var ok = saveDb();
   var msg = $('saveMsg');
+  if(!ok){
+    // Sin espacio para guardar (probablemente por fotos acumuladas): reintenta sin la foto.
+    product.photo = '';
+    db.products[db.products.length - 1] = product;
+    ok = saveDb();
+    msg.textContent = ok
+      ? 'Guardado como «' + product.name + '», pero no había espacio para la foto (se guardó sin ella). Haz una copia de seguridad y bórrala en este dispositivo desde Ajustes para liberar espacio.'
+      : 'No se pudo guardar: no hay espacio disponible en este dispositivo. Haz una copia de seguridad y libera espacio.';
+    msg.hidden = false;
+    return;
+  }
+  pendingPhoto = null;
+  setSavePhotoPreview(null);
   msg.textContent = 'Guardado como «' + product.name + '». Puedes verlo en la pestaña Productos.';
   if(product.supplyId && product.stock > 0) msg.textContent += ' Se descontó el filamento usado del insumo vinculado.';
   msg.hidden = false;
@@ -1261,12 +1392,21 @@ function renderQR(container, fullText){
   container.textContent = 'QR';
 }
 
+/* El QR ya no codifica el texto del precio: apunta a esta misma app con
+   ?cotizacion=<id-del-producto>. Al escanearlo desde el mismo dispositivo
+   (donde viven los datos), se abre la cotización con foto y precio, lista
+   para compartir. Escaneado desde otro celular no mostrará nada útil,
+   porque los datos solo están guardados en este dispositivo. */
+function quoteUrl(productId){
+  return location.origin + location.pathname + '?cotizacion=' + encodeURIComponent(productId);
+}
+
 function printLabel(p, r){
   $('plabelName').textContent = p.name;
   $('plabelPrice').textContent = money(r.final);
   var qrHost = $('plabelQr');
   qrHost._qrW = 160; qrHost._qrH = 160;
-  renderQR(qrHost, 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final));
+  renderQR(qrHost, quoteUrl(p.id));
   window.print();
 }
 
@@ -1283,6 +1423,7 @@ function renderProductos(){
     card.className = 'card';
     var qrId = 'qr-' + p.id;
     card.innerHTML =
+      (p.photo ? '<img class="product-photo" src="'+p.photo+'" alt="Foto de '+esc(p.name)+'">' : '')+
       '<div class="card-top"><h3>'+esc(p.name)+'</h3></div>'+
       '<div class="rowline"><span class="muted">Precio de venta</span><b>'+money(r.final)+'</b></div>'+
       '<div class="rowline"><span class="muted">Costo</span><span>'+money(r.cost)+'</span></div>'+
@@ -1294,10 +1435,11 @@ function renderProductos(){
       '<div class="qr-row"><div class="qr-thumb" id="'+qrId+'"></div>'+
         '<button class="btn ghost small" data-act="print" style="flex:1">Imprimir etiqueta</button></div>'+
       '<div class="card-actions">'+
+        '<button class="btn ghost small" data-act="quote">Cotización</button>'+
         '<button class="btn ghost small" data-act="edit">Editar</button>'+
         '<button class="icon-btn" data-act="del">Eliminar</button>'+
       '</div>';
-    renderQR(card.querySelector('#'+qrId), 'LUMA LAB 3D - ' + p.name + ' - ' + money(r.final));
+    renderQR(card.querySelector('#'+qrId), quoteUrl(p.id));
     card.querySelector('[data-act="inc"]').addEventListener('click', function(){
       p.stock++; adjustSupplyForStock(p, 1); saveDb();
       card.querySelector('[data-role="stockv"]').textContent = p.stock;
@@ -1310,12 +1452,15 @@ function renderProductos(){
       renderSupplies();
     });
     card.querySelector('[data-act="print"]').addEventListener('click', function(){ printLabel(p, r); });
+    card.querySelector('[data-act="quote"]').addEventListener('click', function(){ openQuote(p.id); });
     card.querySelector('[data-act="edit"]').addEventListener('click', function(){
       adjustSupplyForStock(p, -p.stock); // devuelve al insumo el filamento de las piezas aún no vendidas
       calc = Object.assign({}, p.calc);
       applyToDom();
       syncPrinterFields();
       $('name').value = p.name;
+      pendingPhoto = p.photo || null;
+      setSavePhotoPreview(pendingPhoto);
       db.products = db.products.filter(function(x){ return x.id !== p.id; });
       saveDb();
       update();
@@ -1543,6 +1688,154 @@ $('backupFile').addEventListener('change', function(e){
   reader.readAsText(file);
 });
 
+/* ==================================================================== */
+/* COTIZACIÓN (a partir del QR o del botón "Cotización" en Productos)   */
+/* ==================================================================== */
+var currentQuoteProduct = null;
+var currentQuoteResult = null;
+
+function showQuoteMsg(text){
+  var m = $('quoteMsg');
+  m.textContent = text;
+  m.hidden = false;
+  setTimeout(function(){ m.hidden = true; }, 4500);
+}
+
+function openQuote(productId){
+  var p = db.products.filter(function(x){ return x.id === productId; })[0];
+  $('quoteOverlay').hidden = false;
+  $('quoteMsg').hidden = true;
+  if(!p){
+    currentQuoteProduct = null; currentQuoteResult = null;
+    $('quoteName').textContent = 'Producto no encontrado';
+    $('quotePrice').textContent = '';
+    $('quoteDate').textContent = 'Este producto ya no existe en este dispositivo (puede que lo hayas eliminado).';
+    $('quotePhoto').hidden = true;
+    $('quoteActions').hidden = true;
+    return;
+  }
+  var r;
+  try{ r = productLine(p); }catch(err){ r = { final: 0 }; }
+  currentQuoteProduct = p;
+  currentQuoteResult = r;
+  $('quoteActions').hidden = false;
+  $('quoteName').textContent = p.name;
+  $('quotePrice').textContent = money(r.final);
+  $('quoteDate').textContent = 'Cotización generada el ' + new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+  if(p.photo){
+    $('quotePhoto').src = p.photo;
+    $('quotePhoto').hidden = false;
+  } else {
+    $('quotePhoto').hidden = true;
+  }
+}
+$('quoteClose').addEventListener('click', function(){
+  $('quoteOverlay').hidden = true;
+  if(window.history && history.replaceState){ history.replaceState(null, '', location.pathname); }
+});
+
+function buildQuotePDF(p, r){
+  var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+  if(!jsPDFCtor) return null;
+  var doc = new jsPDFCtor({ unit:'pt', format:'a4' });
+  var pageW = doc.internal.pageSize.getWidth();
+  var margin = 48;
+  var y = margin;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(39,64,217);
+  doc.text('LUMA LAB 3D', margin, y);
+  y += 22;
+  doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(90,90,90);
+  doc.text('Cotización · ' + new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }), margin, y);
+  y += 26;
+
+  if(p.photo){
+    try{
+      var maxW = pageW - margin*2;
+      var imgProps = doc.getImageProperties(p.photo);
+      var w = Math.min(maxW, 260);
+      var h = (imgProps.height / imgProps.width) * w;
+      doc.addImage(p.photo, 'JPEG', margin, y, w, h);
+      y += h + 22;
+    }catch(err){ /* si la imagen falla, seguimos sin ella */ }
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(20,29,40);
+  doc.text(String(p.name || 'Producto'), margin, y, { maxWidth: pageW - margin*2 });
+  y += 30;
+
+  doc.setFontSize(24); doc.setTextColor(39,64,217);
+  doc.text(money(r.final), margin, y);
+  y += 30;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(90,90,90);
+  doc.text('Precio válido al momento de esta cotización. Sujeto a disponibilidad de material y tiempo de fabricación.', margin, y, { maxWidth: pageW - margin*2 });
+  y += 46;
+
+  doc.setDrawColor(210,214,222);
+  doc.line(margin, y, pageW - margin, y);
+  y += 20;
+  doc.setFontSize(10); doc.setTextColor(120,120,120);
+  doc.text('LUMA LAB 3D — Impresión 3D a la medida', margin, y);
+
+  return doc;
+}
+
+function quoteFilename(p){
+  var slug = String(p && p.name || 'producto').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40) || 'producto';
+  return 'cotizacion-' + slug + '-' + todayStr() + '.pdf';
+}
+
+function saveOrShareBlob(blob, filename){
+  if(downloadsCap){
+    return downloadsCap.save({ filename: filename, data: blob }).then(function(){ return 'saved'; });
+  }
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  return Promise.resolve('downloaded');
+}
+
+function getQuotePDFBlob(){
+  if(!currentQuoteProduct) return null;
+  var doc = buildQuotePDF(currentQuoteProduct, currentQuoteResult || { final: 0 });
+  return doc ? doc.output('blob') : null;
+}
+
+$('quoteShare').addEventListener('click', function(){
+  if(!currentQuoteProduct){ showQuoteMsg('No hay una cotización para compartir.'); return; }
+  var blob = getQuotePDFBlob();
+  if(!blob){ showQuoteMsg('No se pudo generar el PDF en este dispositivo.'); return; }
+  var filename = quoteFilename(currentQuoteProduct);
+  if(navigator.share && navigator.canShare){
+    try{
+      var file = new File([blob], filename, { type:'application/pdf' });
+      if(navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], title:'Cotización LUMA LAB 3D', text: currentQuoteProduct.name })
+          .catch(function(err){ if(err && err.name !== 'AbortError') showQuoteMsg('No se pudo compartir. Prueba con "Descargar PDF".'); });
+        return;
+      }
+    }catch(err){ /* seguimos con la descarga normal */ }
+  }
+  saveOrShareBlob(blob, filename).then(function(res){
+    showQuoteMsg(res === 'saved' ? 'PDF guardado.' : 'Se descargó el PDF. Ahora puedes compartirlo desde tus archivos.');
+  });
+});
+
+$('quoteDownload').addEventListener('click', function(){
+  if(!currentQuoteProduct){ showQuoteMsg('No hay una cotización para descargar.'); return; }
+  var blob = getQuotePDFBlob();
+  if(!blob){ showQuoteMsg('No se pudo generar el PDF en este dispositivo.'); return; }
+  saveOrShareBlob(blob, quoteFilename(currentQuoteProduct)).then(function(res){
+    showQuoteMsg(res === 'saved' ? 'PDF guardado.' : 'PDF descargado.');
+  });
+});
+
 /* ---------- Inicio ---------- */
 applyToDom();
 syncPrinterFields();
@@ -1550,6 +1843,15 @@ refreshPrinterSelects();
 refreshSupplySelects();
 update();
 showView('calc');
+
+var brandLogoEl = document.querySelector('.brand-logo');
+if(brandLogoEl){ $('quoteLogo').src = brandLogoEl.src; }
+
+(function checkQuoteLink(){
+  var params = new URLSearchParams(location.search);
+  var qid = params.get('cotizacion');
+  if(qid) openQuote(qid);
+})();
 })();
 </script>
 
