@@ -200,6 +200,15 @@ table.tbl tr:last-child td{border-bottom:0}
 .roadmap h3{margin:0 0 8px;font-family:var(--font-display);font-size:15px}
 .roadmap ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.6}
 
+/* Piezas combinadas (varias partes/colores) */
+.part-row{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface-2)}
+.part-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+.part-row-top b{font-size:13px}
+.part-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.part-fields .field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.part-fields .field.full{grid-column:1 / -1}
+.part-fields label{font-size:12px;color:var(--muted);font-weight:600}
+
 /* Foto de producto */
 .photo-box{margin:16px 0}
 .photo-box>label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
@@ -287,7 +296,18 @@ table.tbl tr:last-child td{border-bottom:0}
         <section class="sec" style="--sc:var(--c-material)">
           <h2>Material</h2>
           <div class="fields">
-            <div class="field">
+            <div class="field full" style="margin-top:-4px;margin-bottom:4px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="combinedToggle" style="width:18px;height:18px">
+                <span>Esta pieza se imprimió en varias partes separadas (distinto color o filamento cada una)</span>
+              </label>
+            </div>
+            <div class="field full" id="combinedBox" hidden>
+              <div id="partsList" style="display:flex;flex-direction:column;gap:12px"></div>
+              <button class="btn ghost small" id="addPart" type="button" style="margin-top:10px">+ Agregar parte</button>
+              <p class="hint" style="margin-top:8px">El peso, el tiempo de impresión y el precio por kg de cada parte se suman entre sí. Cuando una parte tiene un insumo vinculado, se descuenta de ese insumo al fabricar.</p>
+            </div>
+            <div class="field" data-single-piece="1">
               <label for="material">Tipo de filamento</label>
               <div class="inp">
                 <select id="material">
@@ -302,23 +322,23 @@ table.tbl tr:last-child td{border-bottom:0}
                 </select>
               </div>
             </div>
-            <div class="field">
+            <div class="field" data-single-piece="1">
               <label for="pricePerKg">Precio por kg</label>
               <div class="inp"><input id="pricePerKg" type="number" inputmode="decimal" min="0" step="any"><span class="unit"><b class="c" style="font-weight:inherit"></b>/kg</span></div>
             </div>
-            <div class="field">
+            <div class="field" data-single-piece="1">
               <label for="weight">Peso de la pieza</label>
               <div class="inp"><input id="weight" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
             </div>
-            <div class="field">
+            <div class="field" data-single-piece="1">
               <label for="support">Soportes y purga</label>
               <div class="inp"><input id="support" type="number" inputmode="decimal" min="0" step="any"><span class="unit">g</span></div>
             </div>
-            <div class="field full">
+            <div class="field full" data-single-piece="1">
               <label for="supplyLink">Insumo vinculado (para descontar stock al fabricar)</label>
               <div class="inp"><select id="supplyLink"><option value="">— Sin vincular —</option></select></div>
             </div>
-            <p class="hint full">El peso lo muestra tu laminador (Cura, Bambu Studio, PrusaSlicer). Si vinculas un insumo, el peso usado se descuenta del inventario de filamento en cuanto la pieza entra a stock (no cuando se vende).</p>
+            <p class="hint full" data-single-piece="1">El peso lo muestra tu laminador (Cura, Bambu Studio, PrusaSlicer). Si vinculas un insumo, el peso usado se descuenta del inventario de filamento en cuanto la pieza entra a stock (no cuando se vende).</p>
           </div>
         </section>
 
@@ -330,7 +350,8 @@ table.tbl tr:last-child td{border-bottom:0}
               <div class="inp"><select id="usePrinter"><option value="">Personalizada — ingresar abajo</option></select></div>
               <p class="hint">Elige una impresora guardada para usar su precio y vida útil real. Cada pieza vendida abona a pagar esa máquina.</p>
             </div>
-            <div class="field full">
+            <p class="hint full" id="combinedTimeNote" hidden>El tiempo de impresión se toma de la suma de las partes que agregaste arriba.</p>
+            <div class="field full" data-single-piece="1">
               <span class="lbl">Tiempo de impresión</span>
               <div class="pair">
                 <div class="inp"><input id="hours" type="number" inputmode="numeric" min="0" step="1" aria-label="Horas"><span class="unit">h</span></div>
@@ -640,6 +661,21 @@ table.tbl tr:last-child td{border-bottom:0}
 
   <!-- ================= RESUMEN ================= -->
   <section class="view" id="view-resumen" hidden>
+    <div class="panel" id="contactPanel">
+      <h2>Datos de contacto</h2>
+      <p class="sub">Aparecen al final de cada cotización en PDF, para que el cliente sepa cómo contactarte.</p>
+      <div class="fields">
+        <div class="field">
+          <label for="contactPhone">Teléfono / WhatsApp</label>
+          <div class="inp"><input id="contactPhone" type="text" autocomplete="off" placeholder="Ej. 8888-8888"></div>
+        </div>
+        <div class="field">
+          <label for="contactEmail">Correo</label>
+          <div class="inp"><input id="contactEmail" type="email" autocomplete="off" placeholder="Ej. lumalab3d@gmail.com"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="panel" id="backupPanel">
       <h2>Copia de seguridad</h2>
       <p class="sub">Guarda de vez en cuando un archivo con todos tus datos (impresoras, insumos, productos y ventas). Si algo llegara a borrarse del navegador, lo restauras desde ese archivo.</p>
@@ -712,6 +748,10 @@ table.tbl tr:last-child td{border-bottom:0}
     <h3 class="quote-name" id="quoteName"></h3>
     <div class="quote-price" id="quotePrice"></div>
     <p class="muted quote-date" id="quoteDate"></p>
+    <div class="field full" style="margin-bottom:14px">
+      <label for="quoteClient">Nombre del cliente (opcional)</label>
+      <div class="inp"><input id="quoteClient" type="text" autocomplete="off" placeholder="¿Para quién es esta cotización?"></div>
+    </div>
     <div class="quote-actions" id="quoteActions">
       <button class="btn" id="quoteShare" type="button">Compartir cotización</button>
       <button class="btn ghost" id="quoteDownload" type="button">Descargar PDF</button>
@@ -755,10 +795,17 @@ var CALC_DEFAULTS = {
   designMode:'existing', designHours:2, designRate:8, license:0, split:'',
   prep:10, post:10, rate:5,
   supplies:0, packaging:0.5, shipping:0,
-  markup:100, fee:0, tax:0, rounding:'none'
+  markup:100, fee:0, tax:0, rounding:'none',
+  combined:false, parts:[]
 };
 var PRESETS = { PLA:20, PETG:22, ABS:24, ASA:28, TPU:30, Nylon:45, Resina:35 };
-var CALC_IDS = Object.keys(CALC_DEFAULTS).filter(function(k){ return k !== 'designMode'; });
+var CALC_IDS = Object.keys(CALC_DEFAULTS).filter(function(k){ return k !== 'designMode' && k !== 'combined' && k !== 'parts'; });
+/* CALC_DEFAULTS.parts es un arreglo (mutable); un Object.assign superficial
+   copiaría la MISMA referencia a varias "calc" distintas, así que cada vez
+   que se arma un calc a partir de CALC_DEFAULTS hay que clonar sus partes. */
+function clonePartsArray(parts){
+  return (Array.isArray(parts) ? parts : []).map(function(pt){ return Object.assign({}, pt); });
+}
 
 var COMP = [
   {k:'material', l:'Material'},
@@ -774,7 +821,7 @@ var COMP = [
 ];
 
 /* ---------- Estado global ---------- */
-var DB_DEFAULTS = { currency:'$', recoveryPercent:15, printers:[], supplies:[], products:[], sales:[] };
+var DB_DEFAULTS = { currency:'$', recoveryPercent:15, contactPhone:'', contactEmail:'', printers:[], supplies:[], products:[], sales:[] };
 
 function loadDb(){
   var db = Object.assign({}, DB_DEFAULTS);
@@ -808,6 +855,7 @@ function loadCalc(){
     var raw = localStorage.getItem(OLD_KEY);
     if(raw){ s = Object.assign(s, JSON.parse(raw)); }
   }catch(e){}
+  s.parts = clonePartsArray(s.parts);
   return s;
 }
 function saveCalc(){ try{ localStorage.setItem(OLD_KEY, JSON.stringify(calc)); }catch(e){} }
@@ -830,10 +878,22 @@ function roundPrice(x, mode){
 
 function compute(s){
   var q = Math.max(1, Math.floor(n(s.qty)) || 1);
-  var grams = n(s.weight) + n(s.support);
-  var hrs = n(s.hours) + n(s.minutes)/60;
+  var grams, hrs, material;
+  var useParts = !!s.combined && Array.isArray(s.parts) && s.parts.length > 0;
+  if(useParts){
+    grams = 0; hrs = 0; material = 0;
+    s.parts.forEach(function(part){
+      var g = n(part.grams);
+      grams += g;
+      hrs += n(part.hours) + n(part.minutes)/60;
+      material += g/1000 * n(part.costPerKg);
+    });
+  } else {
+    grams = n(s.weight) + n(s.support);
+    hrs = n(s.hours) + n(s.minutes)/60;
+    material = grams/1000 * n(s.pricePerKg);
+  }
 
-  var material = grams/1000 * n(s.pricePerKg);
   var energy   = n(s.watts)/1000 * hrs * n(s.kwh);
   var lifeH    = Math.max(1, n(s.lifeHours));
   var machine  = hrs * (n(s.printerPrice)/lifeH + n(s.maint));
@@ -898,16 +958,77 @@ tabBtns.forEach(function(b){ b.addEventListener('click', function(){ showView(b.
 /* ==================================================================== */
 /* CALCULADORA                                                           */
 /* ==================================================================== */
+function setCombinedUI(isCombined){
+  $('combinedBox').hidden = !isCombined;
+  $('combinedTimeNote').hidden = !isCombined;
+  document.querySelectorAll('[data-single-piece]').forEach(function(el){ el.hidden = isCombined; });
+}
 function applyToDom(){
   CALC_IDS.forEach(function(id){ $(id).value = calc[id]; });
   var radios = document.querySelectorAll('input[name="designMode"]');
   for(var i=0;i<radios.length;i++){ radios[i].checked = (radios[i].value === calc.designMode); }
+  if(!Array.isArray(calc.parts)) calc.parts = [];
+  $('combinedToggle').checked = !!calc.combined;
+  setCombinedUI(!!calc.combined);
+  renderPartsList();
 }
 function readFromDom(){
   CALC_IDS.forEach(function(id){ calc[id] = $(id).value; });
   var checked = document.querySelector('input[name="designMode"]:checked');
   calc.designMode = checked ? checked.value : 'existing';
+  calc.combined = $('combinedToggle').checked;
 }
+
+/* ---------- Piezas combinadas (varias partes/colores) ---------- */
+function newPart(){
+  return { id: uid(), label:'', supplyId:'', costPerKg:'', grams:'', hours:'', minutes:'' };
+}
+function partSupplyOptions(selectedId){
+  return '<option value="">— Sin vincular —</option>' + db.supplies.map(function(s){
+    return '<option value="'+s.id+'"'+(s.id === selectedId ? ' selected' : '')+'>'+esc(s.name)+'</option>';
+  }).join('');
+}
+function renderPartsList(){
+  var wrap = $('partsList');
+  wrap.innerHTML = '';
+  if(!Array.isArray(calc.parts)) calc.parts = [];
+  calc.parts.forEach(function(part, idx){
+    var row = document.createElement('div');
+    row.className = 'part-row';
+    row.innerHTML =
+      '<div class="part-row-top"><b>Parte '+(idx+1)+'</b><button class="icon-btn" type="button" data-act="removePart">Quitar</button></div>'+
+      '<div class="part-fields">'+
+        '<div class="field full"><label>Nombre o color (opcional)</label><div class="inp"><input type="text" data-role="label" value="'+esc(part.label||'')+'" placeholder="Ej. Cabeza — negro"></div></div>'+
+        '<div class="field full"><label>Insumo (filamento)</label><div class="inp"><select data-role="supplyId">'+partSupplyOptions(part.supplyId)+'</select></div></div>'+
+        '<div class="field"><label>Gramos usados</label><div class="inp"><input type="number" inputmode="decimal" min="0" step="any" data-role="grams" value="'+(part.grams||'')+'"></div></div>'+
+        '<div class="field"><label>Precio por kg</label><div class="inp"><input type="number" inputmode="decimal" min="0" step="any" data-role="costPerKg" value="'+(part.costPerKg||'')+'"></div></div>'+
+        '<div class="field"><label>Horas</label><div class="inp"><input type="number" inputmode="numeric" min="0" step="1" data-role="hours" value="'+(part.hours||'')+'"></div></div>'+
+        '<div class="field"><label>Minutos</label><div class="inp"><input type="number" inputmode="numeric" min="0" step="1" data-role="minutes" value="'+(part.minutes||'')+'"></div></div>'+
+      '</div>';
+    ['label','grams','costPerKg','hours','minutes'].forEach(function(role){
+      row.querySelector('[data-role="'+role+'"]').addEventListener('input', function(e){ part[role] = e.target.value; });
+    });
+    row.querySelector('[data-role="supplyId"]').addEventListener('change', function(e){
+      part.supplyId = e.target.value;
+      var supply = db.supplies.filter(function(x){ return x.id === part.supplyId; })[0];
+      if(supply){
+        part.costPerKg = supply.costPerKg;
+        row.querySelector('[data-role="costPerKg"]').value = supply.costPerKg;
+      }
+    });
+    row.querySelector('[data-act="removePart"]').addEventListener('click', function(){
+      calc.parts.splice(idx, 1);
+      renderPartsList();
+      update();
+    });
+    wrap.appendChild(row);
+  });
+}
+$('addPart').addEventListener('click', function(){
+  if(!Array.isArray(calc.parts)) calc.parts = [];
+  calc.parts.push(newPart());
+  renderPartsList();
+});
 
 var barEl = $('bar'), rowsEl = $('rows'), segs = {}, rowEls = {};
 COMP.forEach(function(c){
@@ -1021,6 +1142,17 @@ function onInput(e){
     db.currency = t.value;
   } else if(t.id === 'recoveryPercent'){
     db.recoveryPercent = n(t.value) || 0;
+  } else if(t.id === 'combinedToggle'){
+    calc.combined = t.checked;
+    setCombinedUI(t.checked);
+    if(t.checked && (!Array.isArray(calc.parts) || calc.parts.length === 0)){
+      calc.parts = [newPart()];
+      renderPartsList();
+    }
+  } else if(t.id === 'contactPhone'){
+    db.contactPhone = t.value;
+  } else if(t.id === 'contactEmail'){
+    db.contactEmail = t.value;
   }
   update();
 }
@@ -1029,6 +1161,7 @@ document.addEventListener('change', onInput);
 
 $('reset').addEventListener('click', function(){
   calc = Object.assign({}, CALC_DEFAULTS);
+  calc.parts = clonePartsArray(CALC_DEFAULTS.parts);
   applyToDom();
   syncPrinterFields();
   update();
@@ -1135,6 +1268,9 @@ $('savePhotoRemove').addEventListener('click', function(){ pendingPhoto = null; 
 $('saveProduct').addEventListener('click', function(){
   readFromDom();
   var snapshot = Object.assign({}, calc, { qty:1 });
+  // Copia profunda de las partes: si no, el snapshot guardado apuntaría al
+  // mismo arreglo que la Calculadora y cambiaría si luego se edita otra pieza.
+  snapshot.parts = (Array.isArray(calc.parts) ? calc.parts : []).map(function(part){ return Object.assign({}, part); });
   var product = {
     id: uid(),
     name: (calc.name || 'Producto sin nombre').trim(),
@@ -1345,7 +1481,12 @@ function renderSupplies(target){
     card.querySelector('[data-act="del"]').addEventListener('click', function(e){
       confirmDelete(e.currentTarget, function(){
         db.supplies = db.supplies.filter(function(x){ return x.id !== s.id; });
-        db.products.forEach(function(pr){ if(pr.supplyId === s.id) pr.supplyId = ''; });
+        db.products.forEach(function(pr){
+          if(pr.supplyId === s.id) pr.supplyId = '';
+          if(pr.calc && Array.isArray(pr.calc.parts)){
+            pr.calc.parts.forEach(function(part){ if(part.supplyId === s.id) part.supplyId = ''; });
+          }
+        });
         saveDb(); renderSupplies(); refreshSupplySelects();
       });
     });
@@ -1358,13 +1499,25 @@ function renderSupplies(target){
 /* ==================================================================== */
 function productLine(p){
   var safeCalc = Object.assign({}, CALC_DEFAULTS, p && p.calc ? p.calc : {});
+  safeCalc.parts = clonePartsArray(safeCalc.parts);
   return compute(safeCalc);
 }
 /* Descuenta o devuelve filamento del insumo vinculado cuando cambia el stock
    de un producto (al crearlo, al ajustarlo con +/-, o al eliminarlo) —
    el material se contabiliza al fabricar la pieza, no al venderla. */
 function adjustSupplyForStock(product, deltaUnits){
-  if(!deltaUnits || !product.supplyId) return;
+  if(!deltaUnits) return;
+  var c = product.calc || {};
+  if(c.combined && Array.isArray(c.parts) && c.parts.length){
+    c.parts.forEach(function(part){
+      if(!part.supplyId) return;
+      var supply = db.supplies.filter(function(x){ return x.id === part.supplyId; })[0];
+      if(!supply) return;
+      supply.stock = Math.max(0, supply.stock - n(part.grams) * deltaUnits);
+    });
+    return;
+  }
+  if(!product.supplyId) return;
   var supply = db.supplies.filter(function(x){ return x.id === product.supplyId; })[0];
   if(!supply) return;
   var gramsPerUnit = productLine(product).grams;
@@ -1429,7 +1582,12 @@ function renderProductos(){
       '<div class="rowline"><span class="muted">Costo</span><span>'+money(r.cost)+'</span></div>'+
       '<div class="rowline"><span class="muted">Ganancia</span><span>'+money(r.profit)+' ('+pct(r.margin)+')</span></div>'+
       (printer ? '<div class="rowline"><span class="muted">Impresora</span><span>'+esc(printer.name)+'</span></div>' : '')+
-      (supply ? '<div class="rowline"><span class="muted">Insumo</span><span>'+esc(supply.name)+' · '+grams(r.grams)+'/u</span></div>' : '')+
+      (supply && !(p.calc && p.calc.combined) ? '<div class="rowline"><span class="muted">Insumo</span><span>'+esc(supply.name)+' · '+grams(r.grams)+'/u</span></div>' : '')+
+      (p.calc && p.calc.combined && Array.isArray(p.calc.parts) && p.calc.parts.length ? p.calc.parts.map(function(part){
+        var partSupply = db.supplies.filter(function(x){ return x.id === part.supplyId; })[0];
+        var label = part.label ? esc(part.label) : 'Parte';
+        return '<div class="rowline"><span class="muted">'+label+'</span><span>'+(partSupply ? esc(partSupply.name)+' · ' : '')+grams(n(part.grams))+'/u</span></div>';
+      }).join('') : '')+
       '<div class="rowline"><span class="muted">En stock</span>'+
         '<span class="stepper"><button data-act="dec">–</button><span data-role="stockv">'+p.stock+'</span><button data-act="inc">+</button></span></div>'+
       '<div class="qr-row"><div class="qr-thumb" id="'+qrId+'"></div>'+
@@ -1624,6 +1782,7 @@ function buildBackup(){
   return {
     app: 'LUMA LAB 3D', version: 1, exportedAt: new Date().toISOString(),
     currency: db.currency, recoveryPercent: db.recoveryPercent,
+    contactPhone: db.contactPhone, contactEmail: db.contactEmail,
     printers: db.printers, supplies: db.supplies, products: db.products, sales: db.sales,
     calc: calc
   };
@@ -1674,11 +1833,15 @@ $('backupFile').addEventListener('change', function(e){
     }
     db.currency = data.currency || db.currency;
     db.recoveryPercent = (typeof data.recoveryPercent === 'number') ? data.recoveryPercent : db.recoveryPercent;
+    db.contactPhone = (typeof data.contactPhone === 'string') ? data.contactPhone : db.contactPhone;
+    db.contactEmail = (typeof data.contactEmail === 'string') ? data.contactEmail : db.contactEmail;
     db.printers = Array.isArray(data.printers) ? data.printers : db.printers;
     db.supplies = Array.isArray(data.supplies) ? data.supplies : db.supplies;
     db.products = Array.isArray(data.products) ? data.products : db.products;
     db.sales = Array.isArray(data.sales) ? data.sales : db.sales;
-    if(data.calc) calc = Object.assign({}, CALC_DEFAULTS, data.calc);
+    if(data.calc){ calc = Object.assign({}, CALC_DEFAULTS, data.calc); calc.parts = clonePartsArray(calc.parts); }
+    $('contactPhone').value = db.contactPhone || '';
+    $('contactEmail').value = db.contactEmail || '';
     saveDb(); saveCalc();
     applyToDom(); syncPrinterFields(); refreshPrinterSelects(); refreshSupplySelects();
     update(); renderResumen();
@@ -1722,6 +1885,7 @@ function openQuote(productId){
   $('quoteName').textContent = p.name;
   $('quotePrice').textContent = money(r.final);
   $('quoteDate').textContent = 'Cotización generada el ' + new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+  $('quoteClient').value = '';
   if(p.photo){
     $('quotePhoto').src = p.photo;
     $('quotePhoto').hidden = false;
@@ -1734,7 +1898,7 @@ $('quoteClose').addEventListener('click', function(){
   if(window.history && history.replaceState){ history.replaceState(null, '', location.pathname); }
 });
 
-function buildQuotePDF(p, r){
+function buildQuotePDF(p, r, clientName){
   var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
   if(!jsPDFCtor) return null;
   var doc = new jsPDFCtor({ unit:'pt', format:'a4' });
@@ -1742,12 +1906,25 @@ function buildQuotePDF(p, r){
   var margin = 48;
   var y = margin;
 
+  var logoSize = 0;
+  if(brandLogoDataUrl){
+    try{
+      logoSize = 40;
+      doc.addImage(brandLogoDataUrl, 'JPEG', margin, y - 6, logoSize, logoSize);
+    }catch(err){ logoSize = 0; }
+  }
+  var textX = margin + (logoSize ? logoSize + 12 : 0);
   doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(39,64,217);
-  doc.text('LUMA LAB 3D', margin, y);
-  y += 22;
+  doc.text('LUMA LAB 3D', textX, y + 14);
   doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(90,90,90);
-  doc.text('Cotización · ' + new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }), margin, y);
-  y += 26;
+  doc.text('Cotización · ' + new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }), textX, y + 30);
+  y += Math.max(logoSize, 36) + 16;
+
+  if(clientName){
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,29,40);
+    doc.text('Para: ' + clientName, margin, y);
+    y += 22;
+  }
 
   if(p.photo){
     try{
@@ -1777,6 +1954,11 @@ function buildQuotePDF(p, r){
   y += 20;
   doc.setFontSize(10); doc.setTextColor(120,120,120);
   doc.text('LUMA LAB 3D — Impresión 3D a la medida', margin, y);
+  var contactLine = [db.contactPhone, db.contactEmail].filter(function(v){ return v && String(v).trim(); }).join('  ·  ');
+  if(contactLine){
+    y += 15;
+    doc.text(contactLine, margin, y);
+  }
 
   return doc;
 }
@@ -1803,7 +1985,8 @@ function saveOrShareBlob(blob, filename){
 
 function getQuotePDFBlob(){
   if(!currentQuoteProduct) return null;
-  var doc = buildQuotePDF(currentQuoteProduct, currentQuoteResult || { final: 0 });
+  var clientName = ($('quoteClient').value || '').trim();
+  var doc = buildQuotePDF(currentQuoteProduct, currentQuoteResult || { final: 0 }, clientName);
   return doc ? doc.output('blob') : null;
 }
 
@@ -1837,6 +2020,8 @@ $('quoteDownload').addEventListener('click', function(){
 });
 
 /* ---------- Inicio ---------- */
+$('contactPhone').value = db.contactPhone || '';
+$('contactEmail').value = db.contactEmail || '';
 applyToDom();
 syncPrinterFields();
 refreshPrinterSelects();
@@ -1845,6 +2030,7 @@ update();
 showView('calc');
 
 var brandLogoEl = document.querySelector('.brand-logo');
+var brandLogoDataUrl = brandLogoEl ? brandLogoEl.src : '';
 if(brandLogoEl){ $('quoteLogo').src = brandLogoEl.src; }
 
 (function checkQuoteLink(){
