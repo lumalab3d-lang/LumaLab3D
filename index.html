@@ -642,8 +642,14 @@ table.tbl tr:last-child td{border-bottom:0}
           <label for="saleDate">Fecha</label>
           <div class="inp"><input id="saleDate" type="date"></div>
         </div>
+        <div class="field" style="max-width:150px">
+          <label for="saleUnitPrice">Precio de venta (u.)</label>
+          <div class="inp"><input id="saleUnitPrice" type="number" inputmode="decimal" min="0" step="any"></div>
+        </div>
         <button class="btn" id="saleSave" type="button">Registrar venta</button>
       </div>
+      <p class="hint" id="saleUnitHint" style="margin-top:8px"></p>
+      <p class="warn" id="saleLossWarn" hidden style="margin-top:8px"></p>
       <p class="empty" id="saleFormEmpty" hidden>Primero guarda un producto en la pestaña Productos.</p>
     </div>
 
@@ -1660,14 +1666,50 @@ function refreshSaleProductSelect(){
   }).join('');
   $('saleFormEmpty').hidden = db.products.length > 0;
   $('saleSave').disabled = db.products.length === 0;
+  updateSaleUnitPriceDefault();
 }
 
-function registerSale(productId, qty, dateStr){
+/* Al elegir un producto (o al abrir la pestaña), el precio de venta se
+   rellena con el precio calculado, pero queda editable: si se negocia con
+   el cliente, aquí se pone el precio real al que se vendió. */
+function updateSaleUnitPriceDefault(){
+  var pid = $('saleProduct').value;
+  var p = db.products.filter(function(x){ return x.id === pid; })[0];
+  if(!p){
+    $('saleUnitHint').textContent = '';
+    $('saleLossWarn').hidden = true;
+    return;
+  }
+  var r = productLine(p);
+  $('saleUnitPrice').value = r.final;
+  $('saleUnitPrice').dataset.cost = r.cost;
+  $('saleUnitHint').textContent = 'Precio calculado: ' + money(r.final) + ' · Costo: ' + money(r.cost) + '. Puedes cambiar el precio si negociaste con el cliente.';
+  checkSaleLossWarning();
+}
+function checkSaleLossWarning(){
+  var cost = n($('saleUnitPrice').dataset.cost);
+  var price = n($('saleUnitPrice').value);
+  var typed = ($('saleUnitPrice').value || '').trim() !== '';
+  var atLoss = typed && price < cost - 0.004;
+  $('saleLossWarn').hidden = !atLoss;
+  if(atLoss) $('saleLossWarn').textContent = '⚠ Ese precio ('+money(price)+') está por debajo del costo ('+money(cost)+'): esta venta dejaría pérdida, no ganancia.';
+}
+$('saleProduct').addEventListener('change', updateSaleUnitPriceDefault);
+$('saleUnitPrice').addEventListener('input', checkSaleLossWarning);
+
+function registerSale(productId, qty, dateStr, customUnitPrice){
   var p = db.products.filter(function(x){ return x.id === productId; })[0];
   if(!p) return false;
   qty = Math.max(1, Math.floor(qty) || 1);
   var r = productLine(p);
   p.stock = Math.max(0, p.stock - qty);
+
+  // Si se negoció un precio distinto al calculado, se registra ese precio
+  // real (puede ser mayor o menor); la ganancia se recalcula contra el
+  // mismo costo de fabricación, para saber si esa venta dejó pérdida.
+  var unitPrice = (customUnitPrice !== undefined && customUnitPrice !== null && isFinite(customUnitPrice) && customUnitPrice >= 0)
+    ? customUnitPrice : r.final;
+  var unitProfit = unitPrice - r.cost;
 
   var recoveredAmt = 0;
   if(p.printerId){
@@ -1675,7 +1717,7 @@ function registerSale(productId, qty, dateStr){
     if(printer){
       var already = printerRecoveredFromSales(printer.id);
       var room = Math.max(0, printer.cost - already);
-      var want = r.profit * qty * (db.recoveryPercent/100);
+      var want = Math.max(0, unitProfit) * qty * (db.recoveryPercent/100);
       recoveredAmt = Math.min(want, room);
     }
   }
@@ -1683,7 +1725,7 @@ function registerSale(productId, qty, dateStr){
   // (ver adjustSupplyForStock), así que la venta no vuelve a tocar el insumo.
   db.sales.push({
     id: uid(), productId: p.id, productName: p.name, qty: qty,
-    date: dateStr || todayStr(), unitPrice: r.final, unitCost: r.cost, unitProfit: r.profit,
+    date: dateStr || todayStr(), unitPrice: unitPrice, unitCost: r.cost, unitProfit: unitProfit,
     printerId: p.printerId || '', recoveredAmt: recoveredAmt
   });
   saveDb();
@@ -1704,7 +1746,9 @@ $('saleSave').addEventListener('click', function(){
   if(!pid) return;
   var qty = Math.max(1, Math.floor(n($('saleQty').value)) || 1);
   var date = $('saleDate').value || todayStr();
-  if(registerSale(pid, qty, date)){
+  var typedPrice = parseFloat($('saleUnitPrice').value);
+  var customPrice = isFinite(typedPrice) ? typedPrice : undefined;
+  if(registerSale(pid, qty, date, customPrice)){
     $('saleQty').value = 1;
     renderVentas();
   }
@@ -1719,9 +1763,11 @@ function renderVentas(){
   $('salesEmpty').hidden = sorted.length > 0;
   sorted.forEach(function(s){
     var printer = db.printers.filter(function(x){ return x.id === s.printerId; })[0];
+    var atLoss = typeof s.unitProfit === 'number' && s.unitProfit < -0.004;
     var tr = document.createElement('tr');
+    if(atLoss) tr.title = 'Esta venta se hizo por debajo del costo de fabricación.';
     tr.innerHTML = '<td>'+esc(s.date)+'</td><td>'+esc(s.productName)+'</td><td>'+s.qty+'</td>'+
-      '<td>'+money(s.unitPrice)+'</td><td>'+money(s.unitPrice*s.qty)+'</td>'+
+      '<td>'+money(s.unitPrice)+(atLoss ? ' <span class="badge warn" style="margin-left:4px">Pérdida</span>' : '')+'</td><td>'+money(s.unitPrice*s.qty)+'</td>'+
       '<td>'+(printer?esc(printer.name):'—')+'</td><td>'+(s.recoveredAmt?money(s.recoveredAmt):'—')+'</td>'+
       '<td><button class="icon-btn" data-act="del">Deshacer</button></td>';
     tr.querySelector('[data-act="del"]').addEventListener('click', function(e){
